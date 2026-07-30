@@ -14,6 +14,27 @@
     <!-- 🎉 화려한 완수 축하 폭죽 라이브러리 (canvas-confetti) -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
+    <!-- 🏃‍♂️ 초슬림 NFC 원터치 뷰 모드 전용 스타일 -->
+    <style>
+        body.nfc-slim-active header,
+        body.nfc-slim-active main,
+        body.nfc-slim-active nav,
+        body.nfc-slim-active .app-header,
+        body.nfc-slim-active .main-content,
+        body.nfc-slim-active .bottom-nav {
+            display: none !important;
+        }
+        body.nfc-slim-active {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            min-height: 100vh !important;
+            margin: 0 !important;
+            padding: 20px !important;
+        }
+    </style>
+
     <!-- 0.0001초 100% 무적 독립 실행 인라인 스크립트 (불필요한 삭제완료 alert 팝업 제거 내장) -->
     <script>
         // 전역 상태 객체 0초 최우선 선언
@@ -1280,6 +1301,89 @@
             openNFCUserSelectModal();
         }
         window.directPromptResetMyNFCName = directPromptResetMyNFCName;
+
+        // 🏷️ [사무실 전용 NFC 스티커 1초 등록 모달]
+        function directOpenNFCRegisterModal() {
+            var overlay = document.getElementById('nfcRegisterModalOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'nfcRegisterModalOverlay';
+                overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:999999999; background:rgba(15,23,42,0.8); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; padding:20px;';
+                document.body.appendChild(overlay);
+            }
+
+            overlay.innerHTML = `
+                <div style="background:#ffffff; width:100%; max-width:440px; border-radius:24px; padding:28px 24px; text-align:center; box-shadow:0 25px 50px rgba(0,0,0,0.3); border:2px solid #10b981;">
+                    <div style="font-size:2.8rem; margin-bottom:10px;">🏷️</div>
+                    <h2 style="font-size:1.4rem; font-weight:900; color:#0f172a; margin:0 0 6px 0;">사무실 전용 NFC 스티커 1초 등록</h2>
+                    <p style="font-size:0.85rem; font-weight:700; color:#64748b; margin:0 0 20px 0; line-height:1.5;">
+                        NFC Tools 앱에 표출된 물리 칩 번호(UID)를 입력해 주세요.<br>등록된 스티커만 사무실 진품으로 100% 검증됩니다.
+                    </p>
+                    
+                    <div style="text-align:left; margin-bottom:16px;">
+                        <label style="font-size:0.83rem; font-weight:800; color:#334155; display:block; margin-bottom:6px;">🏷️ 스티커 이름 (예: 사무실 출입문 스티커)</label>
+                        <input type="text" id="nfcRegTagName" value="사무실 출입문 NFC 스티커" style="width:100%; padding:10px 14px; border-radius:10px; border:1.5px solid #cbd5e1; font-size:0.95rem; font-weight:700; box-sizing:border-box;">
+                    </div>
+
+                    <div style="text-align:left; margin-bottom:20px;">
+                        <label style="font-size:0.83rem; font-weight:800; color:#334155; display:block; margin-bottom:6px;">🔢 물리 칩 번호 (UID)</label>
+                        <input type="text" id="nfcRegTagUid" placeholder="예: 04:A2:8F:B2:1C:60:80" value="04:A2:8F:B2:1C:60:80" style="width:100%; padding:10px 14px; border-radius:10px; border:1.5px solid #cbd5e1; font-size:0.95rem; font-weight:800; color:#2563eb; font-family:monospace; box-sizing:border-box;">
+                    </div>
+
+                    <div style="display:flex; gap:10px;">
+                        <button type="button" onclick="document.getElementById('nfcRegisterModalOverlay').style.display='none';" style="flex:1; padding:12px; background:#f1f5f9; color:#64748b; font-weight:800; border:none; border-radius:12px; cursor:pointer;">취소</button>
+                        <button type="button" onclick="directSaveNFCTagRegistry();" style="flex:2; padding:12px; background:linear-gradient(135deg, #10b981, #059669); color:#ffffff; font-weight:800; border:none; border-radius:12px; cursor:pointer; box-shadow:0 4px 12px rgba(16,185,129,0.3);">🟢 정품 스티커 등록 완료</button>
+                    </div>
+                </div>
+            `;
+            overlay.style.display = 'flex';
+        }
+        window.directOpenNFCRegisterModal = directOpenNFCRegisterModal;
+
+        async function directSaveNFCTagRegistry() {
+            var nameInput = document.getElementById('nfcRegTagName');
+            var uidInput = document.getElementById('nfcRegTagUid');
+
+            var tagName = nameInput ? nameInput.value.trim() : '사무실 출입문 NFC 스티커';
+            var tagUid = uidInput ? uidInput.value.trim() : '04:A2:8F:B2:1C:60:80';
+
+            if (!tagUid) {
+                alert("⚠️ 물리 칩 번호(UID)를 입력해 주세요!");
+                return;
+            }
+
+            var newTag = {
+                tag_code: 'DOYAK_NFC_OFFICE_MAIN_2026',
+                tag_name: tagName,
+                tag_uid: tagUid,
+                is_active: true
+            };
+
+            if (!AppState.validNfcTags) AppState.validNfcTags = [];
+            AppState.validNfcTags.push(newTag);
+
+            try {
+                localStorage.setItem('doyakdaro_valid_nfc_tags', JSON.stringify(AppState.validNfcTags));
+            } catch(e){}
+
+            if (window.supabaseClient) {
+                try {
+                    await window.supabaseClient.from('nfc_tags').upsert([{
+                        id: 'tag-office-main-2026',
+                        tag_code: 'DOYAK_NFC_OFFICE_MAIN_2026',
+                        tag_name: tagName,
+                        tag_uid: tagUid,
+                        is_active: true
+                    }]);
+                } catch(e){}
+            }
+
+            var overlay = document.getElementById('nfcRegisterModalOverlay');
+            if (overlay) overlay.style.display = 'none';
+
+            alert("🎉 [사무실 정품 NFC 스티커 1초 등록 완료!]\n\n물리 칩 번호 (" + tagUid + ") 가 성공적으로 등록되었습니다!");
+        }
+        window.directSaveNFCTagRegistry = directSaveNFCTagRegistry;
 
         // 🚀 [방법 2 무결점 0초 자동 NFC 감지 엔진]
         function checkAutoNFCScanOnLoad() {
@@ -7247,11 +7351,16 @@
 
             <!-- ⚙️ 3. 시스템 기능 스위치 (NFC 근태 기능 On/Off 1초 조절) -->
             <div style="margin-top: 16px; background: #ffffff; padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(15,23,42,0.12); box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative; z-index: 10;">
-                <div style="font-weight: 800; color: #0f172a; font-size: 0.95rem; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: 800; color: #0f172a; font-size: 0.95rem; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:8px;">
                     <span><i class="fa-solid fa-sliders" style="color: #2563eb;"></i> 🏃‍♂️ NFC 출퇴근 기능 사용 설정</span>
-                    <button type="button" id="adminNFCToggleBtn" onclick="directToggleNFCAttendanceFeature(event); return false;" class="btn-primary btn-sm" style="background: #10b981; font-weight: 800; padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; position: relative; z-index: 99999;">
-                        🟢 현재 사용 중 (ON)
-                    </button>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <button type="button" onclick="directOpenNFCRegisterModal()" class="btn-primary btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; color:#ffffff; box-shadow:0 2px 6px rgba(16,185,129,0.3);">
+                            🏷️ 사무실 NFC 스티커 1초 등록
+                        </button>
+                        <button type="button" id="adminNFCToggleBtn" onclick="directToggleNFCAttendanceFeature(event); return false;" class="btn-primary btn-sm" style="background: #10b981; font-weight: 800; padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; position: relative; z-index: 99999;">
+                            🟢 현재 사용 중 (ON)
+                        </button>
+                    </div>
                 </div>
                 <div style="font-size: 0.8rem; color: #64748b; line-height: 1.4;">
                     * 🔴 <strong>비활성화(OFF)</strong>로 전환 시 전 팀원 화면에서 상단 근태 현황 바 및 근태 기록 모달이 즉시 100% 숨겨지고 인식 로직이 중단됩니다.
@@ -7583,8 +7692,16 @@
 
             <!-- 1. 👑 최고 관리자 대리 출퇴근 컨트롤러 (슬림 파스텔 미화) -->
             <div id="adminTargetAttendanceControlBox" style="background: #f8fafc; border: 1px solid rgba(37,99,235,0.2); border-radius: 14px; padding: 14px; margin-bottom: 16px;">
-                <div style="font-size: 0.85rem; font-weight: 800; color: #2563eb; margin-bottom: 10px;">
-                    👑 최고 관리자 전용: 특정 팀원 수동 근태 대리 제어
+                <div style="font-size: 0.85rem; font-weight: 800; color: #2563eb; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div>👑 최고 관리자 전용: 특정 팀원 수동 근태 대리 제어</div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" onclick="directAdminResetUserDeviceLock()" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(2,132,199,0.3);" title="선택한 팀원의 폰 락을 초기화하여 새로 등록할 수 있게 해줍니다">
+                            🔓 선택 팀원 폰 락 1초 초기화
+                        </button>
+                        <button type="button" onclick="directOpenNFCRegisterModal()" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #ffffff; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(99,102,241,0.3);">
+                            🏷️ 사무실 NFC 스티커 1초 등록
+                        </button>
+                    </div>
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px;">
                     <select id="adminTargetUserSelect_inConsole" style="flex: 1; min-width: 140px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(15,23,42,0.2); font-size: 0.85rem; font-weight: 700; background: #ffffff; color: #0f172a;">
@@ -7594,10 +7711,10 @@
                         <span style="font-size: 0.8rem; font-weight: 800; color: #475569;">⏰</span>
                         <input type="time" id="adminCustomClockTime_inModal" style="border: none; background: transparent; font-size: 0.85rem; font-weight: 800; color: #0f172a; outline: none; cursor: pointer; width: 95px;">
                     </div>
-                    <button type="button" onclick="directAdminClockToggleUserInAdminModal(true)" class="btn-primary btn-sm" style="background: #059669; font-weight: 800; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; border: none; cursor: pointer;">
+                    <button type="button" onclick="directAdminClockToggleUser(true)" class="btn-primary btn-sm" style="background: #059669; font-weight: 800; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; border: none; cursor: pointer;">
                         🟢 대리 출근
                     </button>
-                    <button type="button" onclick="directAdminClockToggleUserInAdminModal(false)" class="btn-primary btn-sm" style="background: #dc2626; font-weight: 800; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; border: none; cursor: pointer;">
+                    <button type="button" onclick="directAdminClockToggleUser(false)" class="btn-primary btn-sm" style="background: #dc2626; font-weight: 800; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; border: none; cursor: pointer;">
                         ⚪ 대리 퇴근
                     </button>
                 </div>
@@ -7615,7 +7732,7 @@
                 </div>
             </div>
 
-            <!-- 2. 📊 엑셀 (CSV) 데이터 내보내기 & 필터 헤더 -->
+            <!-- 2. 📊 엑셀 (CSV) 데이터 내보내기 & 필터 헤더 & 실시간 DB 새로고침 -->
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; background: #ffffff; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(15,23,42,0.1);">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <select id="attendanceMonthFilter" onchange="directRenderAttendanceUI()" style="padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(15,23,42,0.2); font-size: 0.82rem; font-weight: 700;">
@@ -7625,9 +7742,14 @@
                         <option value="ALL">👤 전체 팀원</option>
                     </select>
                 </div>
-                <button type="button" onclick="directExportAttendanceCSV(event)" class="btn-primary btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; border-radius: 8px; padding: 7px 14px; font-size: 0.83rem; border: none; cursor: pointer;" title="근태 기록 엑셀 파일 다운로드 & 클립보드 복사">
-                    📊 엑셀 (CSV) 내보내기
-                </button>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <button type="button" onclick="directFetchAttendanceFromSupabase()" class="btn-primary btn-sm" style="background: linear-gradient(135deg, #3b82f6, #2563eb); font-weight: 800; border-radius: 8px; padding: 7px 12px; font-size: 0.83rem; border: none; cursor: pointer;" title="구글 클라우드 DB에서 실시간 출퇴근 데이터 1초 강제 불러오기">
+                        🔄 실시간 DB 새로고침
+                    </button>
+                    <button type="button" onclick="directExportAttendanceCSV(event)" class="btn-primary btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; border-radius: 8px; padding: 7px 14px; font-size: 0.83rem; border: none; cursor: pointer;" title="근태 기록 엑셀 파일 다운로드 & 클립보드 복사">
+                        📊 엑셀 (CSV) 내보내기
+                    </button>
+                </div>
             </div>
 
             <!-- 3. 🟢 근무 중 / ⚪ 퇴근 완료 / 🔴 미출근 / 📋 전체 이력 탭 버튼 4종 -->
@@ -7813,12 +7935,29 @@
 
             <!-- 👑 최고 관리자 전용 특정 팀원 수동 근태 대리 제어 콘솔 (Admin 전용) -->
             <div id="adminTargetAttendanceControlBox" style="display: none; background: #fffbe6; border: 1px solid rgba(245,158,11,0.3); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-                <div style="font-size: 0.88rem; font-weight: 800; color: #d97706; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                    👑 <strong>최고 관리자 전용: 특정 팀원 수동 근태 대리 제어</strong>
+                <div style="font-size: 0.88rem; font-weight: 800; color: #d97706; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        👑 <strong>최고 관리자 전용: 특정 팀원 수동 근태 대리 제어</strong>
+                    </div>
+                    <button type="button" onclick="directOpenNFCRegisterModal()" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #ffffff; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(99,102,241,0.3);">
+                        🏷️ 사무실 NFC 스티커 1초 등록
+                    </button>
                 </div>
+
+                <!-- ⏰ [1초 원터치 퀵 시각 바 & 증감 조절] -->
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; background: rgba(245,158,11,0.1); padding: 8px 10px; border-radius: 10px;">
+                    <span style="font-size: 0.78rem; font-weight: 800; color: #92400e;">⏰ 퀵 시각:</span>
+                    <button type="button" onclick="directSetAdminTimePreset('08:00')" style="background: #10b981; color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer;">[08:00 출근]</button>
+                    <button type="button" onclick="directSetAdminTimePreset('17:00')" style="background: #ef4444; color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer;">[17:00 퇴근]</button>
+                    <button type="button" onclick="directSetAdminTimePreset('now')" style="background: #3b82f6; color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer;">[⚡ 현재시각]</button>
+                    <button type="button" onclick="directAdjustAdminTimePreset(-30)" style="background: #ffffff; color: #475569; border: 1px solid rgba(15,23,42,0.15); padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer;">[-30분]</button>
+                    <button type="button" onclick="directAdjustAdminTimePreset(30)" style="background: #ffffff; color: #475569; border: 1px solid rgba(15,23,42,0.15); padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer;">[+30분]</button>
+                    <input type="time" id="adminCustomClockTime_inModal" style="padding: 4px 8px; font-size: 0.8rem; font-weight: 800; border-radius: 6px; border: 1px solid rgba(15,23,42,0.2); background: #ffffff; color: #0f172a; margin-left: auto;">
+                </div>
+
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <select id="adminTargetUserSelect" style="flex: 1; min-width: 150px; padding: 8px 12px; font-size: 0.85rem; font-weight: 700; border-radius: 8px; border: 1px solid rgba(15,23,42,0.2); background: #ffffff; color: #0f172a;">
-                        <option value="">팀원을 선택하세요...</option>
+                    <select id="adminTargetUserSelect_inConsole" style="flex: 1; min-width: 150px; padding: 8px 12px; font-size: 0.85rem; font-weight: 700; border-radius: 8px; border: 1px solid rgba(15,23,42,0.2); background: #ffffff; color: #0f172a;">
+                        <option value="">-- 수동 출퇴근 처리할 팀원 선택 --</option>
                     </select>
                     <button type="button" onclick="directAdminClockToggleUser(true)" class="btn-primary btn-sm" style="background: #10b981; font-weight: 800; padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; white-space: nowrap;">
                         🟢 대리 출근
@@ -7829,7 +7968,7 @@
                 </div>
             </div>
 
-            <!-- 🗓️ [근태 누적 스마트 필터 & 엑셀 내보내기 컨트롤러] -->
+            <!-- 🗓️ [근태 누적 스마트 필터 & 엑셀 내보내기 & 실시간 DB 새로고침 컨트롤러] -->
             <div style="background: #f8fafc; border: 1px solid rgba(15,23,42,0.12); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;">
@@ -7842,10 +7981,16 @@
                             <option value="ALL">👤 전체 팀원 보기</option>
                         </select>
                     </div>
-                    <!-- 📊 엑셀 CSV 내보내기 버튼 -->
-                    <button type="button" onclick="directExportAttendanceCSV(event)" class="btn-primary btn-sm" style="background: linear-gradient(135deg, #059669, #10b981); font-weight: 800; padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; white-space: nowrap; font-size: 0.82rem;" title="선택된 월/팀원 근태 데이터를 엑셀(CSV)로 다운로드">
-                        📊 엑셀 (CSV) 내보내기
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <!-- 🔄 실시간 DB 강제 새로고침 버튼 -->
+                        <button type="button" onclick="directFetchAttendanceFromSupabase()" class="btn-primary btn-sm" style="background: linear-gradient(135deg, #3b82f6, #2563eb); font-weight: 800; padding: 7px 12px; border-radius: 8px; border: none; cursor: pointer; white-space: nowrap; font-size: 0.82rem;" title="구글 클라우드 DB에서 실시간 출퇴근 데이터 1초 강제 불러오기">
+                            🔄 실시간 DB 새로고침
+                        </button>
+                        <!-- 📊 엑셀 CSV 내보내기 버튼 -->
+                        <button type="button" onclick="directExportAttendanceCSV(event)" class="btn-primary btn-sm" style="background: linear-gradient(135deg, #059669, #10b981); font-weight: 800; padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; white-space: nowrap; font-size: 0.82rem;" title="선택된 월/팀원 근태 데이터를 엑셀(CSV)로 다운로드">
+                            📊 엑셀 (CSV) 내보내기
+                        </button>
+                    </div>
                 </div>
 
                 <!-- 📊 선택 조건별 월간 누적 요약 통계 카드 -->
@@ -7882,6 +8027,50 @@
         </div>
     </div>
 
+    <!-- 🏷️ 사무실 NFC 스티커 물리 UID 1초 등록 모달 -->
+    <div id="nfcRegisterModal" class="modal-overlay" style="display: none; z-index: 4500000000 !important; background: rgba(15,23,42,0.6); backdrop-filter: blur(8px); align-items: center; justify-content: center;">
+        <div class="glass-panel" style="background: #ffffff; border-radius: 20px; padding: 24px 28px; max-width: 440px; width: 92%; border: 2px solid #6366f1; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="font-size: 1.1rem; font-weight: 800; color: #4338ca; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                🏷️ <strong>사무실 NFC 스티커 물리 UID 등록</strong>
+            </div>
+            <p style="font-size: 0.86rem; color: #475569; margin-bottom: 14px; font-weight: 600; line-height: 1.4;">
+                NFC Tools 앱에서 태그 후 표시된 <strong>물리 UID 번호</strong>(예: <code>04:A2:8F:B2:1C:60:80</code>)를 아래에 입력해 주세요.
+            </p>
+            <input type="text" id="nfcPhysicalUIDInput" placeholder="예: 04:A2:8F:B2:1C:60:80" style="width: 100%; padding: 10px 14px; font-size: 0.95rem; font-weight: 700; border-radius: 10px; border: 2px solid #cbd5e1; box-sizing: border-box; margin-bottom: 16px; color: #0f172a;">
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="directSaveNFCPhysicalUID()" class="btn-primary" style="background: linear-gradient(135deg, #6366f1, #4f46e5); flex: 1; padding: 10px; font-weight: 800; border-radius: 10px; border: none; cursor: pointer; color: #fff;">저장 완료</button>
+                <button type="button" onclick="directCloseModal('nfcRegisterModal')" class="btn-secondary" style="padding: 10px 16px; font-weight: 800; border-radius: 10px; cursor: pointer;">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 👤 [어르신 맞춤] 본인 이름 최초 1회 선택 모달 -->
+    <div id="nfcUserSelectModal" class="modal-overlay" style="display: none; z-index: 5000000000 !important; background: rgba(15,23,42,0.75); backdrop-filter: blur(10px); align-items: center; justify-content: center;">
+        <div class="glass-panel" style="background: #ffffff; border-radius: 24px; padding: 28px 24px; max-width: 480px; width: 92%; text-align: center; border: 3px solid #10b981; box-shadow: 0 25px 70px rgba(0,0,0,0.4);">
+            <div style="font-size: 3rem; margin-bottom: 6px;">👤</div>
+            <h2 style="font-size: 1.4rem; font-weight: 900; color: #0f172a; margin-bottom: 6px;">본인의 이름을 선택해 주세요</h2>
+            <p style="font-size: 0.9rem; color: #64748b; font-weight: 700; margin-bottom: 18px;">최초 1회만 선택하시면 이 핸드폰에 자동 저장됩니다.</p>
+            
+            <div id="nfcUserSelectBtnGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 320px; overflow-y: auto; padding: 4px; margin-bottom: 16px;">
+                <!-- 21명 명단 동적 생성 -->
+            </div>
+
+            <button type="button" onclick="directCloseModal('nfcUserSelectModal')" class="btn-secondary" style="width: 100%; padding: 10px; font-weight: 800; border-radius: 10px;">취소</button>
+        </div>
+    </div>
+
+    <!-- 👵👴 [어르신 맞춤] 0.1초 원터치 대형 빅 알림 팝업 -->
+    <div id="elderNFCBigNoticeModal" class="modal-overlay" style="display: none; z-index: 6000000000 !important; background: rgba(15,23,42,0.85); backdrop-filter: blur(12px); align-items: center; justify-content: center;">
+        <div class="glass-panel" style="background: #ffffff; border-radius: 28px; padding: 36px 28px; max-width: 440px; width: 90%; text-align: center; border: 4px solid #10b981; box-shadow: 0 30px 90px rgba(0,0,0,0.5); animation: popIn 0.3s ease-out;">
+            <div id="elderNFCBigIcon" style="font-size: 5rem; margin-bottom: 12px; line-height: 1;">🟢</div>
+            <h1 id="elderNFCBigTitle" style="font-size: 1.8rem; font-weight: 900; color: #0f172a; margin-bottom: 10px; line-height: 1.2;">홍길동 님<br>출근 완료!</h1>
+            <p id="elderNFCBigSub" style="font-size: 1.1rem; color: #059669; font-weight: 800; margin-bottom: 24px;">오늘도 화이팅입니다! 🎵</p>
+            <button type="button" onclick="directCloseModal('elderNFCBigNoticeModal')" class="btn-primary" style="background: #10b981; width: 100%; padding: 14px; font-size: 1.1rem; font-weight: 900; border-radius: 14px; border: none; cursor: pointer; color: #ffffff; box-shadow: 0 4px 14px rgba(16,185,129,0.4);">
+                확인 (3초 후 자동 닫힘)
+            </button>
+        </div>
+    </div>
+
     <!-- 🏷️ NFC 태그 수신 성공 모달/알림 토스트 -->
     <div id="nfcToastModal" class="modal-overlay" style="display: none; z-index: 4000000000 !important; background: rgba(15,23,42,0.6); backdrop-filter: blur(8px); align-items: center; justify-content: center;">
         <div class="glass-panel" style="background: #ffffff; border-radius: 20px; padding: 24px 32px; max-width: 400px; width: 90%; text-align: center; border: 2px solid #10b981; box-shadow: 0 20px 60px rgba(0,0,0,0.3); transform: scale(1); transition: all 0.2s;">
@@ -7896,15 +8085,394 @@
     <button type="button" id="mobileFabBtn" class="mobile-fab-btn" onclick="directOpenModal('scheduleModal')" title="새 일정 빠르게 추가" style="display: none !important;">
         <i class="fa-solid fa-plus"></i>
     </button>
-    <script src="app.js?v=20260729_v200000000_final"></script>
     <script>
+        // 🏷️ NFC 1초 물리 UID 등록 모달 열기
+        function directOpenNFCRegisterModal() {
+            var input = document.getElementById('nfcPhysicalUIDInput');
+            if (input) {
+                var saved = localStorage.getItem('doyakdaro_office_nfc_uid') || '04:A2:8F:B2:1C:60:80';
+                input.value = saved;
+            }
+            directOpenModal('nfcRegisterModal');
+        }
+        window.directOpenNFCRegisterModal = directOpenNFCRegisterModal;
+
+        // 🏷️ NFC 1초 물리 UID 저장
+        function directSaveNFCPhysicalUID() {
+            var input = document.getElementById('nfcPhysicalUIDInput');
+            var val = input ? input.value.trim() : '';
+            if (!val) {
+                alert('NFC 물리 UID 번호를 입력해 주세요.');
+                return;
+            }
+            localStorage.setItem('doyakdaro_office_nfc_uid', val);
+            if (typeof playSuccessSound === 'function') playSuccessSound();
+            alert('사무실 NFC 물리 UID (' + val + ')가 정품 등록되었습니다!');
+            directCloseModal('nfcRegisterModal');
+        }
+        window.directSaveNFCPhysicalUID = directSaveNFCPhysicalUID;
+
+        // ⏰ 수동 시각 프리셋 세팅
+        function directSetAdminTimePreset(timeStr) {
+            var input = document.getElementById('adminCustomClockTime_inModal');
+            if (!input) return;
+            if (timeStr === 'now') {
+                var now = new Date();
+                var hh = String(now.getHours()).padStart(2, '0');
+                var mm = String(now.getMinutes()).padStart(2, '0');
+                input.value = hh + ':' + mm;
+            } else {
+                input.value = timeStr;
+            }
+            if (typeof playClickSound === 'function') playClickSound();
+        }
+        window.directSetAdminTimePreset = directSetAdminTimePreset;
+
+        // ⏰ 시각 증감 조절 (-30분 / +30분)
+        function directAdjustAdminTimePreset(minutesToAdd) {
+            var input = document.getElementById('adminCustomClockTime_inModal');
+            if (!input) return;
+            var val = input.value;
+            var now = new Date();
+            var hh = now.getHours();
+            var mm = now.getMinutes();
+            if (val && val.includes(':')) {
+                var parts = val.split(':');
+                hh = parseInt(parts[0], 10);
+                mm = parseInt(parts[1], 10);
+            }
+            var dateObj = new Date(2026, 0, 1, hh, mm);
+            dateObj.setMinutes(dateObj.getMinutes() + minutesToAdd);
+            var newHH = String(dateObj.getHours()).padStart(2, '0');
+            var newMM = String(dateObj.getMinutes()).padStart(2, '0');
+            input.value = newHH + ':' + newMM;
+            if (typeof playClickSound === 'function') playClickSound();
+        }
+        window.directAdjustAdminTimePreset = directAdjustAdminTimePreset;
+
+        // 👵👴 [어르신 맞춤] 0.1초 대형 빅 알림 팝업
+        function showElderNFCBigNotice(name, isClockIn) {
+            var modal = document.getElementById('elderNFCBigNoticeModal');
+            var icon = document.getElementById('elderNFCBigIcon');
+            var title = document.getElementById('elderNFCBigTitle');
+            var sub = document.getElementById('elderNFCBigSub');
+            if (!modal || !title) return;
+
+            if (isClockIn) {
+                if (icon) icon.innerHTML = '🟢';
+                title.innerHTML = '<strong>' + name + '</strong> 님<br>출근 완료!';
+                if (sub) {
+                    sub.innerHTML = '오늘도 좋은 하루 되세요! 🎵';
+                    sub.style.color = '#059669';
+                }
+                modal.querySelector('.glass-panel').style.borderColor = '#10b981';
+            } else {
+                if (icon) icon.innerHTML = '⚪';
+                title.innerHTML = '<strong>' + name + '</strong> 님<br>퇴근 완료!';
+                if (sub) {
+                    sub.innerHTML = '오늘 하루 수고 많으셨습니다! 👋';
+                    sub.style.color = '#475569';
+                }
+                modal.querySelector('.glass-panel').style.borderColor = '#64748b';
+            }
+
+            if (typeof playSuccessSound === 'function') playSuccessSound();
+            directOpenModal('elderNFCBigNoticeModal');
+
+            setTimeout(function () {
+                directCloseModal('elderNFCBigNoticeModal');
+            }, 3200);
+        }
+        window.showElderNFCBigNotice = showElderNFCBigNotice;
+
+        // 👤 [어르신 맞춤] 21명 본인 이름 최초 선택 모달 열기
+        function openNFCUserSelectModal() {
+            var grid = document.getElementById('nfcUserSelectBtnGrid');
+            if (!grid) return;
+            
+            // 21명 팀원 명단 (가나다순)
+            var users = ['강연주', '김경미', '김동현', '김민지', '김보람', '김성민', '김아름', '김영희', '박병주', '박지훈', '서유진', '심채연', '연정민', '윤정숙', '이민우', '이철수', '장보고', '정다은', '최민수', '허병준', '허영주'];
+            
+            grid.innerHTML = '';
+            users.forEach(function (userName) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn-primary';
+                btn.style.cssText = 'background: #f1f5f9; color: #0f172a; border: 2px solid #cbd5e1; border-radius: 12px; padding: 14px 8px; font-size: 1.05rem; font-weight: 800; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.03);';
+                btn.innerHTML = userName;
+                btn.onclick = function () {
+                    selectNFCUserAndClock(userName);
+                };
+                grid.appendChild(btn);
+            });
+
+            directOpenModal('nfcUserSelectModal');
+        }
+        window.openNFCUserSelectModal = openNFCUserSelectModal;
+
+        // 본인 선택 후 자동 처리
+        function selectNFCUserAndClock(userName) {
+            localStorage.setItem('doyakdaro_nfc_my_name', userName);
+            directCloseModal('nfcUserSelectModal');
+            directProcessNFCTagScan(userName);
+        }
+        window.selectNFCUserAndClock = selectNFCUserAndClock;
+
+        // 🏷️ NFC 스티커 태그 스마트 0.1초 처리 엔진
+        function directProcessNFCTagScan(targetName) {
+            var mySavedName = targetName || localStorage.getItem('doyakdaro_nfc_my_name');
+            if (!mySavedName) {
+                openNFCUserSelectModal();
+                return;
+            }
+
+            // 출퇴근 처리 상태 판별
+            var records = window.AppState ? (window.AppState.attendanceRecords || []) : [];
+            var todayStr = new Date().toISOString().split('T')[0];
+            var myTodayRecord = records.find(function (r) {
+                var rName = r.user_name || r.userName || r.userId || r.user_id;
+                var rDate = r.work_date || r.workDate;
+                return rName === mySavedName && rDate === todayStr;
+            });
+
+            var isClockInAction = true;
+            if (myTodayRecord && (myTodayRecord.clock_in || myTodayRecord.clockIn) && !(myTodayRecord.clock_out || myTodayRecord.clockOut)) {
+                isClockInAction = false; // 이미 출근 중이면 퇴근 처리
+            }
+
+            // 대리/자동 근태 실행
+            if (typeof directAdminClockToggleUserByName === 'function') {
+                directAdminClockToggleUserByName(mySavedName, isClockInAction, null, 'NFC_TAG');
+            } else if (typeof directAdminClockToggleUser === 'function') {
+                var sel = document.getElementById('adminTargetUserSelect_inConsole') || document.getElementById('adminTargetUserSelect');
+                if (sel) {
+                    var opt = Array.from(sel.options).find(function(o){ return o.value === mySavedName; });
+                    if (opt) sel.value = mySavedName;
+                }
+                directAdminClockToggleUser(isClockInAction);
+            }
+
+            showElderNFCBigNotice(mySavedName, isClockInAction);
+        }
+        window.directProcessNFCTagScan = directProcessNFCTagScan;
+
+        // 🚀 페이지 로딩 시 NFC 태그 접속 감지
+        function checkAutoNFCScanOnLoad() {
+            var params = new URLSearchParams(window.location.search);
+            if (params.get('nfc') === '1' || params.has('nfc_tag')) {
+                setTimeout(function () {
+                    directProcessNFCTagScan();
+                }, 300);
+            }
+        }
+
         setTimeout(function(){
             if(typeof renderDashboardDDayCards === 'function') renderDashboardDDayCards();
-        }, 100);
+            if(typeof directFetchAttendanceFromSupabase === 'function') directFetchAttendanceFromSupabase();
+            checkAutoNFCScanOnLoad();
+        // ⚡ LTE / 5G 모바일 데이터 망 무적 REST API 직통 샷 함수 (통신사 제약 100% 돌파)
+        async function directPushToSupabaseRestAPI(payload) {
+            if (!payload || !payload.user_name) return;
+            try {
+                var url = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/attendance_records';
+                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var headers = {
+                    'apikey': key,
+                    'Authorization': 'Bearer ' + key,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'resolution=merge-duplicates'
+                };
+                await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload)
+                });
+            } catch(err) { }
+        }
+        window.directPushToSupabaseRestAPI = directPushToSupabaseRestAPI;
+
+        // 👥 [실제 등록 팀원 명단 100% 동적 추출 로더]
+        function populateAdminUserSelect() {
+            var selects = [
+                document.getElementById('adminTargetUserSelect_inConsole'),
+                document.getElementById('adminTargetUserSelect'),
+                document.getElementById('adminTargetUserSelect_inModal')
+            ];
+
+            var nameSet = {};
+            
+            // 1. AppState.attendanceRecords 에서 팀원 이름 추출
+            if (window.AppState && Array.isArray(window.AppState.attendanceRecords)) {
+                window.AppState.attendanceRecords.forEach(function(r) {
+                    var n = r.user_name || r.userName || r.userId || r.user_id;
+                    if (n && typeof n === 'string' && n.trim()) nameSet[n.trim()] = true;
+                });
+            }
+
+            // 2. AppState.userRoles 및 localStorage user_roles 에서 팀원 이름 추출
+            try {
+                var roles = window.AppState ? window.AppState.userRoles : null;
+                if (!roles) roles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+                Object.keys(roles).forEach(function(k) {
+                    if (k && k.trim()) nameSet[k.trim()] = true;
+                });
+            } catch(e){}
+
+            // 3. 현재 사용자 및 기본 필수 등록 팀원 보장
+            if (window.AppState && window.AppState.currentUser) {
+                var cur = window.AppState.currentUser.fullName || window.AppState.currentUser;
+                if (cur && typeof cur === 'string' && cur.trim()) nameSet[cur.trim()] = true;
+            }
+            var savedMyName = localStorage.getItem('doyakdaro_nfc_my_name');
+            if (savedMyName && savedMyName.trim()) nameSet[savedMyName.trim()] = true;
+
+            var baseDefaultUsers = ['연정민', '이동훈', '김무섭', '황지환', '김일섭', '이민우'];
+            baseDefaultUsers.forEach(function(u) { nameSet[u] = true; });
+
+            delete nameSet['강연주'];
+            delete nameSet['팀원'];
+
+            var users = Object.keys(nameSet).filter(function(u) {
+                return u !== '강연주' && u !== '팀원';
+            }).sort();
+
+            selects.forEach(function(sel) {
+                if (!sel) return;
+                var currentVal = sel.value;
+                var html = '<option value="">-- 수동 출퇴근 처리할 팀원 선택 --</option>';
+                users.forEach(function(u) {
+                    html += '<option value="' + u + '">' + u + '</option>';
+                });
+                sel.innerHTML = html;
+                if (currentVal) sel.value = currentVal;
+            });
+        }
+        window.populateAdminUserSelect = populateAdminUserSelect;
+
+        // 🔘 [근태 탭 원터치 무적 스위처 - 4개 탭 0.001초 이동 & 하이라이트 복구]
+        function directSwitchAttendanceTab(tabName) {
+            if (!window.AppState) window.AppState = {};
+            window.AppState.activeAttendanceTab = tabName;
+
+            var tabMap = {
+                'working': ['tabBtnWorking', 'attendanceViewTabWorking'],
+                'completed': ['tabBtnCompleted'],
+                'absent': ['tabBtnAbsent', 'attendanceViewTabAbsent'],
+                'all': ['tabBtnAll', 'attendanceViewTabAll']
+            };
+
+            Object.keys(tabMap).forEach(function(tKey) {
+                var isSelected = (tKey === tabName);
+                tabMap[tKey].forEach(function(idStr) {
+                    var btn = document.getElementById(idStr);
+                    if (!btn) return;
+                    if (isSelected) {
+                        btn.style.background = (tKey === 'working') ? 'rgba(16,185,129,0.2)' : ((tKey === 'completed') ? 'rgba(99,102,241,0.2)' : ((tKey === 'absent') ? 'rgba(239,68,68,0.2)' : 'rgba(37,99,235,0.2)'));
+                        btn.style.color = (tKey === 'working') ? '#047857' : ((tKey === 'completed') ? '#4f46e5' : ((tKey === 'absent') ? '#dc2626' : '#2563eb'));
+                        btn.style.fontWeight = '900';
+                        btn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
+                    } else {
+                        btn.style.background = '#f1f5f9';
+                        btn.style.color = '#64748b';
+                        btn.style.fontWeight = '700';
+                        btn.style.boxShadow = 'none';
+                    }
+                });
+            });
+
+            if (typeof directRenderAttendanceUI === 'function') {
+                directRenderAttendanceUI();
+            }
+        }
+        window.directSwitchAttendanceTab = directSwitchAttendanceTab;
+
+        // 🏃‍♂️ [근태 UI 100% 무적 강제 인라인 렌더러 - NFC 뱃지 무조건 표출 보장]
+        function directRenderAttendanceUI() {
+            populateAdminUserSelect();
+            var records = (window.AppState && window.AppState.attendanceRecords) ? window.AppState.attendanceRecords : [];
+            var todayStr = new Date().toISOString().split('T')[0];
+
+            var historyContainer = document.getElementById('attendanceHistoryList');
+            if (!historyContainer) return;
+
+            var activeTab = (window.AppState && window.AppState.activeAttendanceTab) ? window.AppState.activeAttendanceTab : 'working';
+
+            var todayRecords = records.filter(function(r) { return (r.work_date || r.workDate) === todayStr; });
+            var workingRecords = todayRecords.filter(function(r) { return r.status === 'WORKING'; });
+            var completedRecords = todayRecords.filter(function(r) { return r.status === 'COMPLETED'; });
+
+            var elWork = document.getElementById('modalTabWorkingCount') || document.getElementById('tabWorkingCount');
+            if (elWork) elWork.textContent = workingRecords.length;
+            var elComp = document.getElementById('modalTabCompletedCount') || document.getElementById('tabCompletedCount');
+            if (elComp) elComp.textContent = completedRecords.length;
+            var elAll = document.getElementById('modalTabAllCount') || document.getElementById('tabAllCount');
+            if (elAll) elAll.textContent = records.length;
+
+            var displayList = [];
+            if (activeTab === 'working') displayList = workingRecords;
+            else if (activeTab === 'completed') displayList = completedRecords;
+            else displayList = records;
+
+            historyContainer.innerHTML = '';
+            if (displayList.length === 0) {
+                historyContainer.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.85rem; padding:20px;">해당 조건의 출퇴근 기록이 없습니다.</div>';
+                return;
+            }
+
+            displayList.forEach(function(r) {
+                var card = document.createElement('div');
+                card.style.cssText = 'background:#ffffff; border:1px solid rgba(15,23,42,0.12); border-radius:12px; padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; box-shadow:0 2px 6px rgba(0,0,0,0.02);';
+                
+                var rName = r.user_name || r.userName || r.userId || r.user_id;
+                var clockInVal = r.clock_in || r.clockIn;
+                var inTime = clockInVal ? new Date(clockInVal).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+
+                var authType = (r && (r.auth_type === 'ADMIN_MANUAL' || r.authType === 'ADMIN_MANUAL')) ? 'ADMIN_MANUAL' : 'NFC_TAG';
+                var locName = (r && (r.auth_location || r.authLocation)) ? (r.auth_location || r.authLocation) : '본사';
+
+                var tagBadge = '';
+                if (authType === 'ADMIN_MANUAL') {
+                    tagBadge = '<span style="font-size:0.75rem; background:#eef2ff; color:#4f46e5; border:1px solid rgba(99,102,241,0.4); padding:3px 8px; border-radius:6px; font-weight:800; display:inline-block; margin-left:4px;">👑 관리자 대리</span>';
+                } else {
+                    tagBadge = '<span style="font-size:0.75rem; background:#ecfdf5; color:#059669; border:1px solid rgba(16,185,129,0.4); padding:3px 8px; border-radius:6px; font-weight:800; display:inline-block; margin-left:4px;">🏷️ NFC 인증 (' + locName + ')</span>';
+                }
+
+                var isWorking = r.status === 'WORKING';
+                var statusBadge = isWorking ? 
+                    '<span style="background:#e6f4ea; color:#137333; padding:4px 8px; border-radius:6px; font-weight:800; font-size:0.78rem; display:inline-block;">🟢 출근 근무 중</span>' : 
+                    '<span style="background:#f1f5f9; color:#64748b; padding:4px 8px; border-radius:6px; font-weight:800; font-size:0.78rem; display:inline-block;">⚪ 퇴근 완료</span>';
+
+                var actionBtn = '';
+                if (activeTab !== 'all') {
+                    if (isWorking) {
+                        actionBtn = '<button type="button" onclick="directAdminClockToggleUserByName(\'' + rName + '\', false)" style="background:#ef4444; color:#fff; font-weight:800; border:none; padding:6px 12px; border-radius:8px; font-size:0.78rem; cursor:pointer;">🔴 수동 퇴근</button>';
+                    } else {
+                        actionBtn = '<button type="button" onclick="directAdminClockToggleUserByName(\'' + rName + '\', true)" style="background:#10b981; color:#fff; font-weight:800; border:none; padding:6px 12px; border-radius:8px; font-size:0.78rem; cursor:pointer;">🟢 수동 출근</button>';
+                    }
+                }
+
+                card.innerHTML = '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' +
+                                 '<strong style="font-size:0.98rem; color:#0f172a;">👤 ' + rName + '</strong> ' +
+                                 statusBadge +
+                                 tagBadge +
+                                 '</div>' +
+                                 '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">' +
+                                 '<div style="font-size:0.82rem; color:#059669; font-weight:800;">⏰ 출근: ' + inTime + '</div>' +
+                                 actionBtn +
+                                 '</div>';
+                historyContainer.appendChild(card);
+            });
+        }
+        window.directRenderAttendanceUI = directRenderAttendanceUI;
+
         setTimeout(function(){
+            populateAdminUserSelect();
             if(typeof renderDashboardDDayCards === 'function') renderDashboardDDayCards();
+            if(typeof directFetchAttendanceFromSupabase === 'function') directFetchAttendanceFromSupabase();
         }, 600);
     </script>
+    <!-- 🚀 전역 근태 & 시스템 엔터프라이즈 엔진 스크립트 강제 바인딩 연결 (v=20260730_2303) -->
+    <script src="app.js?v=20260730_2303"></script>
 </body>
 
 </html>
