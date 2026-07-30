@@ -1,0 +1,2442 @@
+/* =================================================================
+   💎 [눈 피로 0% 토스 3.0 공식 모노톤 퓨어 세라믹 디자인 시스템 v25.0]
+   눈이 편안한 맑은 백색 + 1px 슬레이트 테두리 + 단 하나의 딥블루 포인트 톤
+   ================================================================= */
+:root {
+    /* 맑고 시원한 100% 퓨어 세라믹 순백색 (#ffffff) 배경 시스템 */
+    --bg-gradient: #ffffff;
+    --header-bg: #ffffff;
+    --panel-bg: #ffffff;
+    --panel-border: rgba(15, 23, 42, 0.08);
+    
+    --primary-blue: #2563eb;
+    --accent-purple: #9333ea;
+    --accent-pink: #ec4899;
+    --accent-green: #059669;
+    --accent-amber: #d97706;
+    
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    --text-bright: #0f172a;
+    
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    --btn-shadow: none;
+    
+    --header-height: 64px;
+    --nav-height: 68px;
+}
+
+/* 🌙 10점 만점 딥 블랙 OLED 다크 모드 (Deep Black Mode) */
+body.dark-mode {
+    --bg-gradient: #090d16;
+    --header-bg: #0f172a;
+    --panel-bg: #1e293b;
+    --panel-border: rgba(255, 255, 255, 0.1);
+    
+    --primary-blue: #3b82f6;
+    --text-primary: #ffffff;
+    --text-secondary: #e2e8f0;
+    --text-muted: #94a3b8;
+    
+    --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --btn-shadow: none;
+}
+
+/* 💎 럭셔리 슬레이트 감성 모드 (Luxury Slate Mode) */
+body.slate-mode {
+    --bg-gradient: #1e293b;
+    --header-bg: #0f172a;
+    --panel-bg: #334155;
+    --panel-border: rgba(255, 255, 255, 0.15);
+    
+    --primary-blue: #60a5fa;
+    --text-primary: #ffffff;
+    --text-secondary: #f1f5f9;
+    --text-muted: #cbd5e1;
+    
+    --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    --btn-shadow: none;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    /* 맑고 깨끗한 퓨어 화이트(#ffffff) 기본 배경 보장 및 하단 잘림 방지 80px 방어 여백 */
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    padding-top: var(--header-height);
+    padding-bottom: calc(var(--nav-height) + 80px) !important;
+}
+
+/* 💎 눈 피로 0% 미니멀 카드 패널 */
+.glass-panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--card-shadow) !important;
+    padding: 20px;
+    color: var(--text-primary);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.glass-panel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 💎 눈 피로 0% 미니멀 버튼 시스템 */
+.btn-primary, .btn-secondary, .btn-sm {
+    border: 1px solid var(--panel-border) !important;
+    box-shadow: none !important;
+    font-weight: 700 !important;
+    border-radius: 12px !important;
+    transition: opacity 0.15s ease !important;
+}
+
+.btn-primary:active, .btn-secondary:active, .btn-sm:active {
+    opacity: 0.8 !important;
+}
+
+/* 🎯 4번 회의록 스타일 기준 1,000% 시인성 맑은 세라믹 일정 카드 시스템 */
+.task-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+    margin-bottom: 10px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+    color: #0f172a !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+}
+
+body.dark-mode .task-card {
+    background: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+body.slate-mode .task-card {
+    background: #334155 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+}
+
+.task-title {
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+    color: inherit !important;
+    margin-bottom: 6px !important;
+}
+
+.task-desc {
+    font-size: 0.85rem !important;
+    color: inherit !important;
+    opacity: 0.9 !important;
+    margin-bottom: 8px !important;
+    line-height: 1.4 !important;
+}
+
+/* ☀️ 상단 검은색 띠 100% 영구 전멸 - 맑은 순백색(#ffffff) 퓨어 세라믹 헤더 (100% 맨 위 풀 와이드 하드닝!) */
+.app-header, header#appHeader, header.app-header, #appHeader {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: var(--header-height) !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 8px 32px !important;
+    box-sizing: border-box !important;
+    z-index: 10000 !important;
+    flex-wrap: nowrap !important;
+    gap: 12px !important;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.brand-icon {
+    font-size: 1.5rem;
+    color: var(--accent-purple);
+    filter: drop-shadow(0 0 8px var(--accent-purple));
+}
+
+.brand-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #a855f7, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.badge-v {
+    font-size: 0.7rem;
+    background: rgba(168, 85, 247, 0.2);
+    color: var(--accent-purple);
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid rgba(168, 85, 247, 0.4);
+}
+
+.user-profile-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+}
+
+.user-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.btn-logout {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 6px;
+    transition: color 0.2s;
+}
+.btn-logout:hover {
+    color: #ef4444;
+}
+
+/* 메인 레이아웃 및 탭 구동 (하단 잘림 방지 80px 안전 패딩) */
+.main-layout {
+    width: 100%;
+    margin: 0;
+    padding: 16px;
+    padding-bottom: 80px !important;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* 🚀 [잘림 100% 영구 방지: 유연 반응형 뷰포트 & 울트라 슬림 4px 퍼플 스크롤바] */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.4);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 85, 247, 0.7);
+}
+
+@media (min-width: 769px) {
+    body {
+        overflow-y: auto; /* 창 크기를 줄여도 절대 짤리지 않게 유연 스크롤 지원 */
+    }
+    .main-layout {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: calc(100vh - var(--header-height) - 10px);
+        padding: 14px 18px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-layout {
+        padding: 10px 12px;
+    }
+    .glass-panel {
+        padding: 12px 14px !important;
+        margin-bottom: 12px !important;
+    }
+    .welcome-card {
+        padding: 10px 14px !important;
+        margin-bottom: 12px !important;
+    }
+    .metrics-grid {
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+    }
+    .metric-card {
+        padding: 10px 12px !important;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 게이트웨이 / 인증 로그인 뷰 */
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - var(--header-height) - 40px);
+    padding: 20px;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 440px;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.auth-icon {
+    font-size: 2.8rem;
+    margin-bottom: 12px;
+}
+
+.auth-header h2 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+
+.auth-header p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* 폼 인풋 및 팝업 달력 세팅 (맑은 순백색 세라믹 인풋) */
+.input-group {
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.input-group input, 
+.input-group textarea, 
+.input-group select {
+    width: 100%;
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.15) !important;
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: #0f172a !important;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-group input:focus, 
+.input-group textarea:focus, 
+.input-group select:focus {
+    border-color: var(--primary-blue) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* 📅 팝업 달력 날짜 픽커 가독성 스타일 */
+.date-picker-styled {
+    cursor: pointer;
+    font-weight: 600;
+    color: #2563eb !important;
+    background: rgba(37, 99, 235, 0.08) !important;
+    border: 1px solid rgba(37, 99, 235, 0.3) !important;
+}
+
+/* 버튼 시스템 */
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-blue), #1d4ed8) !important;
+    color: white !important;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btn-primary:active {
+    transform: scale(0.97);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-sm {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    border-radius: 8px;
+}
+
+.btn-secondary {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(15, 23, 42, 0.15) !important;
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02) !important;
+}
+
+/* 대시보드 환영 카드 및 성장 타워 빌딩 (맑은 퓨어 세라믹 화이트 패널) */
+.welcome-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03) !important;
+    border-radius: 16px !important;
+    padding: 20px 24px !important;
+}
+
+.welcome-text h3 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: #0f172a !important;
+}
+
+.welcome-text p {
+    font-size: 0.85rem;
+    color: #475569 !important;
+}
+
+.growth-score-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.score-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.score-value {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #facc15;
+}
+
+.tower-card {
+    text-align: center;
+}
+
+.tower-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.tower-floors-tag {
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: rgba(168, 85, 247, 0.2);
+    color: var(--accent-purple);
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.tower-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.tower-visual-box {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 8px;
+    align-items: center;
+    padding: 10px;
+}
+
+.tower-floor-segment {
+    width: 90%;
+    max-width: 320px;
+    height: 44px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(168, 85, 247, 0.5));
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    animation: bounceIn 0.4s ease;
+}
+
+.tower-window {
+    width: 12px;
+    height: 16px;
+    background: #fef08a;
+    border-radius: 3px;
+    box-shadow: 0 0 8px #fef08a;
+}
+
+.floor-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: white;
+}
+
+/* 요약 메트릭 카드 */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.metric-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+}
+
+.metric-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.icon-todo { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.icon-in-progress { background: rgba(99, 102, 241, 0.2); color: #6366f1; }
+.icon-done { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+
+.metric-data {
+    display: flex;
+    flex-direction: column;
+}
+
+.metric-number {
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.metric-title {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* 프로그레스 진행 바 */
+.progress-card {
+    margin-bottom: 20px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* 프로그레스 진행 바 */
+.progress-card {
+    margin-bottom: 20px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.progress-bar-container {
+    height: 10px;
+    background: #e2e8f0 !important;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple)) !important;
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+
+/* 명예의 전당 랭킹 */
+.ranking-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.ranking-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02) !important;
+}
+
+.rank-user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rank-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--primary-blue) !important;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.rank-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #0f172a !important;
+}
+
+.rank-score {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #2563eb !important;
+}
+
+/* 최근 완수 피드 */
+.recent-feed-card h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #0f172a !important;
+}
+
+.feed-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.feed-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    padding: 10px 14px;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02) !important;
+}
+
+.feed-empty {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 16px 0;
+}
+
+/* 아이디어 보물상자 Grid */
+.idea-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    max-height: 520px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.idea-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    color: #0f172a !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+}
+
+.idea-card-header {
+    margin-bottom: 10px;
+}
+
+.idea-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #0f172a !important;
+}
+
+.idea-author {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.idea-desc {
+    font-size: 0.85rem;
+    color: #334155 !important;
+    margin-bottom: 14px;
+    line-height: 1.4;
+}
+
+.idea-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.btn-like {
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.15) !important;
+    color: #0f172a !important;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.btn-convert-task {
+    background: linear-gradient(135deg, var(--accent-green), #059669);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.converted-tag {
+    font-size: 0.75rem;
+    color: var(--accent-green);
+    font-weight: 700;
+}
+
+/* 🎯 시각적 캘린더 (시원시원하고 넉넉한 스크롤 달력 시스템)
+   - 억지로 달력을 화면 안에 가두지 않고, 날짜 칸(1~31일) 높이를 시원하게 min-height: 100px로 확대하여 일정이 넉넉히 들어가며, 스크롤 내릴 때 26~31일과 하단 테두리가 100% 잘림 없이 깨끗하게 보이도록 설계되었습니다.
+*/
+#tabCalendar {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    display: none;
+    flex-direction: column !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    padding-bottom: 60px !important;
+    margin-bottom: 60px !important;
+}
+
+#tabCalendar.active {
+    display: flex !important;
+}
+
+#tabCalendar .section-top-bar {
+    flex-shrink: 0 !important;
+    margin-bottom: 8px !important;
+}
+
+/* 달력 외곽 카드 패널 - 시원시원한 스크롤 지원 카드 패널 */
+.calendar-card {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    padding: 16px 20px 30px 20px !important;
+    margin-bottom: 60px !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+}
+
+.calendar-header {
+    flex-shrink: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px !important;
+}
+
+.btn-cal-nav {
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.15) !important;
+    color: #0f172a !important;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.calendar-weekdays {
+    flex-shrink: 0 !important;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 3px !important;
+}
+
+.weekday.sun { color: #ef4444; }
+.weekday.sat { color: #3b82f6; }
+
+.calendar-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+    grid-auto-rows: minmax(100px, auto) !important; /* 넉넉하고 시원한 날짜 칸 세로 높이 */
+    gap: 6px !important;
+    height: auto !important;
+}
+
+.cal-day-cell {
+    height: auto !important;
+    min-height: 100px !important; /* 시원시원한 100px 높이로 일정 넉넉히 수용 */
+    max-height: none !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    border-radius: 8px !important;
+    padding: 6px 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    cursor: pointer;
+    font-size: 0.85rem !important;
+    transition: all 0.2s ease;
+    overflow: visible !important;
+    position: relative;
+    box-sizing: border-box !important;
+}
+
+.cal-day-cell > span:first-child {
+    font-size: 0.88rem !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    margin-bottom: 4px !important;
+    display: inline-block !important;
+    line-height: 1.1 !important;
+}
+
+.cal-day-cell:hover {
+    background: rgba(37, 99, 235, 0.04) !important;
+    border-color: #2563eb !important;
+}
+
+.cal-day-cell.today {
+    border: 2px solid #2563eb !important;
+    background: rgba(37, 99, 235, 0.06) !important;
+    box-shadow: 0 0 14px rgba(37, 99, 235, 0.18) !important;
+}
+
+.cal-day-cell.today::before {
+    content: '오늘';
+    position: absolute;
+    top: 3px;
+    right: 4px;
+    background: #2563eb !important;
+    color: #ffffff !important;
+    font-size: 0.6rem !important;
+    font-weight: 800 !important;
+    padding: 1px 5px !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3) !important;
+}
+
+.cal-day-cell.selected {
+    border-color: var(--primary-blue) !important;
+    background: rgba(37, 99, 235, 0.1) !important;
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.15) !important;
+}
+
+.cal-day-cell.other-month {
+    opacity: 0.3;
+    background: #f8fafc !important;
+}
+
+/* 🏷️ 캘린더 일정 파스텔 뱃지 칩 (.cal-badge, .cal-badge-item) 명품 찰떡 밀착 스타일 */
+.cal-badge-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    margin-top: 2px !important;
+    width: 100% !important;
+    overflow: hidden !important;
+}
+
+.cal-badge, .cal-badge-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    padding: 3px 6px !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+    box-sizing: border-box !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+/* CSS 커스텀 미니 솔리드 닷 (여백 0px 완전 사멸 칼초밀착) */
+.badge-dot {
+    width: 7px !important;
+    height: 7px !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+    margin-right: 0px !important;
+    margin-left: 0px !important;
+    padding: 0px !important;
+}
+
+.badge-dot.dot-blue {
+    background: #2563eb !important;
+    box-shadow: 0 0 5px rgba(37, 99, 235, 0.5) !important;
+}
+
+.badge-dot.dot-amber {
+    background: #d97706 !important;
+    box-shadow: 0 0 5px rgba(217, 119, 6, 0.5) !important;
+}
+
+.badge-dot.dot-green {
+    background: #059669 !important;
+    box-shadow: 0 0 5px rgba(5, 150, 105, 0.5) !important;
+}
+
+.badge-dot.dot-red {
+    background: #dc2626 !important;
+    box-shadow: 0 0 5px rgba(220, 38, 38, 0.5) !important;
+}
+
+.cal-badge span:first-child, .cal-badge i:first-child,
+.cal-badge-item span:first-child, .cal-badge-item i:first-child {
+    margin-right: 0 !important;
+    padding-right: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    font-size: 0.7rem !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
+}
+
+.cal-badge:hover, .cal-badge-item:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+.cal-badge .badge-text, .cal-badge-item span:last-child {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
+.cal-badge.badge-todo {
+    background: rgba(37, 99, 235, 0.08) !important;
+    color: #1d4ed8 !important;
+    border: 1px solid rgba(37, 99, 235, 0.25) !important;
+}
+
+.cal-badge.badge-in-progress {
+    background: rgba(217, 119, 6, 0.08) !important;
+    color: #b45309 !important;
+    border: 1px solid rgba(217, 119, 6, 0.25) !important;
+}
+
+.cal-badge.badge-done {
+    background: rgba(5, 150, 105, 0.08) !important;
+    color: #047857 !important;
+    border: 1px solid rgba(5, 150, 105, 0.25) !important;
+}
+
+.task-dots-container {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+}
+
+.task-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+.dot-todo { background: #f59e0b; }
+.dot-in-progress { background: #6366f1; }
+.dot-done { background: #10b981; }
+
+/* 일정 칸반 보드 */
+.kanban-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+@media (max-width: 768px) {
+    .kanban-board {
+        grid-template-columns: 1fr;
+    }
+}
+
+.kanban-column {
+    background: #f8fafc !important;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
+    color: #0f172a !important;
+}
+
+.column-badge {
+    background: rgba(15, 23, 42, 0.06) !important;
+    color: #0f172a !important;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+}
+
+.kanban-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 100px;
+    max-height: 520px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.task-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.task-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.task-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.task-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.btn-status-move {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--panel-border);
+    color: var(--text-primary);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+
+/* 회의록 노트 뷰 (맑은 퓨어 세라믹 화이트 카드) */
+.meeting-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 520px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.meeting-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    border-radius: 14px !important;
+    padding: 18px !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
+    color: #0f172a !important;
+}
+
+.meeting-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #64748b !important;
+}
+
+.meeting-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #2563eb !important;
+}
+
+.meeting-content {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #334155 !important;
+    white-space: pre-line;
+}
+
+.action-items-box {
+    background: #f8fafc !important;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 6px;
+    color: #0f172a !important;
+}
+
+.action-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #2563eb !important;
+    margin-bottom: 4px;
+}
+
+/* 모바일 전용 5개 터치 하단 네비게이션 바 */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--nav-height);
+    background: #ffffff !important;
+    border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    z-index: 1000;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.nav-item {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+    height: 100%;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.nav-item i {
+    font-size: 1.25rem;
+}
+
+.nav-item.active {
+    color: var(--primary-blue) !important;
+}
+
+/* 맑은 퓨어 세라믹 모달 팝업 오버레이 & 상자 */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.4) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 2000000000 !important;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.15) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+    color: #0f172a !important;
+    padding: 24px !important;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
+    padding-bottom: 10px;
+}
+
+.modal-header h4 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #0f172a !important;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.modal-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.section-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+/* 🎨 칸반 보드 상태별(할일/진행중/완료) 박스 시그니처 글래스모피즘 컬러 틴트 */
+#colTodo.kanban-column {
+    background: rgba(59, 130, 246, 0.04) !important;
+    border: 1px solid rgba(59, 130, 246, 0.25) !important;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.05) !important;
+}
+#colTodo .column-header {
+    border-bottom: 2px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+#colInProgress.kanban-column {
+    background: rgba(245, 158, 11, 0.04) !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.05) !important;
+}
+#colInProgress .column-header {
+    border-bottom: 2px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+#colDone.kanban-column {
+    background: rgba(34, 197, 94, 0.04) !important;
+    border: 1px solid rgba(34, 197, 94, 0.25) !important;
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.05) !important;
+}
+#colDone .column-header {
+    border-bottom: 2px solid rgba(34, 197, 94, 0.3) !important;
+}
+
+/* =================================================================
+   🎨 맑은 100% 퓨어 세라믹 모드 테마 통일
+   ================================================================= */
+body.theme-original, body.theme-charcoal, body.theme-emerald, body.theme-ocean, body.theme-warm, body.dark-mode, body.slate-mode {
+    --bg-gradient: #ffffff !important;
+    --header-bg: #ffffff !important;
+    --panel-bg: #ffffff !important;
+    --panel-border: rgba(15, 23, 42, 0.08) !important;
+    --text-primary: #0f172a !important;
+    --text-secondary: #334155 !important;
+    --text-muted: #64748b !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+}
+
+/* 상단 테마 버튼 전용 모던 스타일 */
+.btn-theme-toggle {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateY(-1px);
+}
+
+
+/* =================================================================
+   📐 대시보드 눈이 편안한 황금 대칭 정렬 CSS 시스템
+   ================================================================= */
+.dashboard-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 20px;
+    align-items: stretch;
+}
+
+.dashboard-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.dashboard-card-equal {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px 20px !important;
+    border-radius: 16px !important;
+}
+
+/* 🚨 모든 팝업 모달창 검색창 가림 방지 최상단 z-index 9999999 & 상단 40px 여백 보정 */
+.modal-overlay,
+#auditLogModal {
+    z-index: 9999999 !important;
+}
+
+#auditLogModal .modal-content,
+.modal-overlay .modal-content {
+    margin-top: 40px !important;
+    z-index: 9999999 !important;
+}
+
+/* 👁️ 읽기전용 뷰어(Viewer) 모드 전용 버튼 100% 원천 차단 (단, 벼락응원은 뷰어 포함 1일 3회 가능!) */
+body.viewer-mode #addIdeaBtn,
+body.viewer-mode #openScheduleModalBtn,
+body.viewer-mode #openMeetingModalBtn,
+body.viewer-mode .btn-convert-task,
+body.viewer-mode .btn-add-quick,
+body.viewer-mode .btn-status-move,
+body.viewer-mode button[onclick*="directDelete"],
+body.viewer-mode button[onclick*="Delete"],
+body.viewer-mode button[onclick*="delete"],
+body.viewer-mode button[onclick*="directOpenEdit"],
+body.viewer-mode button[onclick*="Edit"],
+body.viewer-mode button[onclick*="edit"],
+body.viewer-mode button[onclick*="Convert"],
+body.viewer-mode button[onclick*="convert"] {
+    display: none !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+/* 👆 원터치 토글 정렬 버튼 럭셔리 스타일 */
+.btn-toggle-sort {
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+    color: #facc15;
+    border: 1px solid rgba(250, 204, 21, 0.5);
+    border-radius: 8px;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.btn-toggle-sort:hover {
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.95), rgba(30, 41, 59, 1));
+    border-color: #facc15;
+    transform: translateY(-1px);
+    box-shadow: 0 0 12px rgba(250, 204, 21, 0.4);
+}
+.btn-toggle-sort:active {
+    transform: translateY(0);
+}
+
+/* =================================================================
+   📱 [S24 울트라 & Z폴드5 크로스 멀티 디바이스 반응형 미디어 쿼리]
+   ================================================================= */
+
+/* 1. 📖 Z폴드5 펼침 화면 & 태블릿 모드 (640px ~ 1023px 대화면) */
+@media (min-width: 640px) and (max-width: 1023px) {
+    .main-layout {
+        max-width: 96%;
+        padding: 12px 16px;
+    }
+    .kanban-board {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 12px !important;
+    }
+    .cal-day-cell {
+        min-height: 95px !important;
+    }
+    .metrics-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+/* 2. 📱 S24 울트라 & 슬림 스마트폰 모드 (639px 이하 화면) */
+@media (max-width: 639px) {
+    .main-layout {
+        padding: 8px 10px;
+    }
+    .metrics-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+    }
+    .metric-card {
+        padding: 8px 6px !important;
+        flex-direction: column;
+        text-align: center;
+    }
+    .metric-number {
+        font-size: 1.1rem !important;
+    }
+    .cal-day-cell {
+        min-height: 75px !important;
+        padding: 3px !important;
+    }
+    .cal-badge {
+        font-size: 0.6rem !important;
+        padding: 1px 3px !important;
+    }
+}
+
+/* ☀️ [캡처 3곳 + 실시간 검색 100% 맑은 백색 퓨어 세라믹 강제 시스템] */
+.cal-day-cell, .calendar-day, .calendar-cell, div[class*="cal-day"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+}
+
+.cal-day-cell.other-month, .calendar-day.other-month {
+    background: #f8fafc !important;
+    opacity: 0.6 !important;
+}
+
+.task-card, .kanban-card, .kanban-item, div[class*="task-card"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    color: #0f172a !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* 최근 완료 팀 성과 기록 카드 & 팝업 내부 박스 100% 순백색 */
+#recentTeamAchievementList, #recentTeamAchievementList div, .achievement-item, div[style*="rgba(15, 23, 42"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    color: #0f172a !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+}
+
+/* ☀️ [전체 팝업 + 입력창 + 범례 띠 100% 맑은 순백색 퓨어 세라믹 전수 수술] */
+input, select, textarea, .form-control, .input-field {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(15, 23, 42, 0.18) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+    font-weight: 700 !important;
+}
+
+input::placeholder, textarea::placeholder {
+    color: #94a3b8 !important;
+}
+
+/* 달력 상단 범례 뱃지 띠 100% 맑은 순백색 지정 */
+.calendar-legend, .cal-legend, .legend-group, div[class*="legend"], div[style*="475569"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    color: #0f172a !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+}
+
+/* 🌙/💎 [다크 모드 / 슬레이트 모드 켜졌을 때 눈편한 다크 세라믹 오버라이딩] */
+body.dark-mode, body.slate-mode {
+    background: #0f172a !important;
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+}
+
+body.dark-mode .app-header, body.dark-mode #appHeader,
+body.slate-mode .app-header, body.slate-mode #appHeader {
+    background: #1e293b !important;
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+/* ☀️ [100% 퓨어 화이트 전용 - 텍스트 시인성 10,000% 선명 극대화 대수술] */
+span[style*="color:#facc15"], span[style*="color: #facc15"],
+span[style*="color:#f59e0b"], span[style*="color: #f59e0b"],
+h4[style*="color: #facc15"], h4[style*="color:#facc15"],
+strong[style*="color:#facc15"], strong[style*="color: #facc15"] {
+    color: #b45309 !important;
+    font-weight: 800 !important;
+}
+
+span[style*="color:#c084fc"], span[style*="color: #c084fc"] {
+    color: #6b21a8 !important;
+    font-weight: 800 !important;
+}
+
+span[style*="color:#34d399"], span[style*="color: #34d399"] {
+    color: #15803d !important;
+    font-weight: 800 !important;
+}
+
+/* 흰색/연회색 글씨 100% 선명 슬레이트 블랙 폰트로 통합 */
+p, label, td, th {
+    color: #0f172a !important;
+}
+
+/* ☀️ [캡처 4장 안 보이던 버튼 & 회의록 메타 1,000% 선명 대수술] */
+.btn-primary, button.btn-primary, #openMeetingModalBtn, #openScheduleModalBtnCal, button[type="submit"] {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+    opacity: 1 !important;
+}
+
+.btn-primary i, button.btn-primary i {
+    color: #ffffff !important;
+}
+
+/* 회의록 저장하기 버튼 / 비활성화 버튼 시인성 파급 수술 */
+button:disabled, .btn-primary:disabled {
+    background: #94a3b8 !important;
+    color: #ffffff !important;
+    opacity: 0.85 !important;
+}
+
+/* ☀️ 팝업 모달창 100% 맑은 순백색(#ffffff) 퓨어 세라믹 대수술 */
+.modal-content, div[class*="modal-content"], div[id*="Modal"] .modal-content, #selectedDateTasksModal .modal-content {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(15, 23, 42, 0.15) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12) !important;
+    border-radius: 20px !important;
+}
+
+.modal-header, div[class*="modal-header"] {
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+
+.modal-header h4, .modal-header h3, div[class*="modal-header"] h4 {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+}
+
+/* 💎 상단 검색바 알약 캡슐(Pill-shape) 명품 미니멀 디자인 */
+#globalSearchInput, input[placeholder*="검색"], div[class*="search"] input {
+    border-radius: 9999px !important;
+    padding: 10px 22px !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.14) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
+    color: #0f172a !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+
+#globalSearchInput:focus, input[placeholder*="검색"]:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), 0 4px 14px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* 💎 좌측 사이드바 탭 메뉴 쫀득한 3D 터치 모션 */
+.nav-item {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border-radius: 12px !important;
+    margin: 2px 0 !important;
+}
+
+.nav-item:hover {
+    color: #2563eb !important;
+    background: rgba(37, 99, 235, 0.05) !important;
+    transform: translateY(-2px) !important;
+}
+
+.nav-item.active {
+    color: #2563eb !important;
+    background: rgba(37, 99, 235, 0.08) !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1) !important;
+    border: 1px solid rgba(37, 99, 235, 0.2) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 회의록 메타 데이터 및 회의록 카드 100% 맑은 순백색 고정 */
+.meeting-card, .meet-meta, .meet-author, .meet-date, div[id*="meetingNotesList"] span, div[id*="meetingNotesList"] p, div[id*="meetingCardsList"] .meeting-card {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    font-weight: 700 !important;
+}
+
+/* ☀️ [대시보드 프로그레스 바 & 최근 성과 리스트 100% 맑은 백색 세라믹 대수술] */
+.progress-bar-container {
+    background: #e2e8f0 !important;
+    background-color: #e2e8f0 !important;
+    border-radius: 20px !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+
+#recentDoneFeedList li, .feed-list li, ul.feed-list li, div[id*="DoneFeedList"] li {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+    font-weight: 700 !important;
+}
+
+#recentDoneFeedList li span, .feed-list li span {
+    color: #0f172a !important;
+}
+
+#recentDoneFeedList li small, .feed-list li small, .feed-list li i {
+    color: #2563eb !important;
+    font-weight: 700 !important;
+}
+
+/* ☀️ [대시보드 4대 요약 카드 100% 정중앙 칼정렬 대수술] */
+.metrics-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 16px !important;
+    width: 100% !important;
+    margin: 0 auto 24px auto !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.metric-card, .dashboard-card-equal {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    padding: 18px 12px !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+}
+
+@media (max-width: 768px) {
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+}
+
+/* 📜 [활동 타임라인 & 삭제 데이터 복구 센터 10,000% 선명 오버라이딩] */
+#fullAuditLogModalList li, #auditLogFeedList li, #adminDeletedList li {
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.1) !important;
+    font-weight: 700 !important;
+}
+
+#fullAuditLogModalList li div, #auditLogFeedList li div, #adminDeletedList li div {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+
+/* 🔍 [실시간 검색 팝업 & 대시보드 필터 팝업 100% 퓨어 화이트 세라믹 오버라이딩] */
+#searchOverlayDropdown, 
+#metricFilterModal .modal-content, 
+#doneTasksModal .modal-content, 
+#auditLogModal .modal-content {
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.15) !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12) !important;
+    color: #0f172a !important;
+}
+
+#searchOverlayDropdown h4,
+#searchOverlayDropdown .search-section-title,
+#metricFilterModal h3,
+#metricFilterModal .modal-title {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+}
+
+#searchOverlayDropdown .search-result-item,
+#searchOverlayDropdown div[onclick],
+#metricFilterModalList > div {
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    border-radius: 10px !important;
+    color: #0f172a !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+}
+
+#searchOverlayDropdown .search-result-item:hover,
+#searchOverlayDropdown div[onclick]:hover,
+#metricFilterModalList > div:hover {
+    background: #f8fafc !important;
+    border-color: rgba(37, 99, 235, 0.4) !important;
+}
+
+#searchOverlayDropdown span,
+#searchOverlayDropdown div,
+#searchOverlayDropdown small,
+#metricFilterModal span,
+#metricFilterModal div,
+#metricFilterModal small {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+
+/* 🖥️ [1920x1080 FHD 전용 초슬림 140px 좌측 사이드바 & 상단 헤더 우측 100% 풀 연장] */
+@media (min-width: 1024px) {
+    .bottom-nav {
+        position: fixed !important;
+        top: 64px !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 140px !important;
+        height: calc(100vh - 64px) !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: stretch !important;
+        padding: 20px 8px 24px 8px !important;
+        background: #ffffff !important;
+        border-right: 1px solid rgba(15, 23, 42, 0.08) !important;
+        border-top: none !important;
+        box-shadow: 4px 0 20px rgba(15, 23, 42, 0.03) !important;
+        border-radius: 0 !important;
+        z-index: 9999 !important;
+    }
+
+    .bottom-nav .nav-item {
+        width: 100% !important;
+        flex-direction: row !important;
+        gap: 8px !important;
+        padding: 10px 10px !important;
+        border-radius: 12px !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+        font-size: 0.88rem !important;
+        font-weight: 800 !important;
+        color: #475569 !important;
+        margin-bottom: 6px !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .bottom-nav .nav-item:hover {
+        background: rgba(15, 23, 42, 0.04) !important;
+        color: #0f172a !important;
+    }
+
+    .bottom-nav .nav-item.active {
+        background: rgba(37, 99, 235, 0.1) !important;
+        color: #2563eb !important;
+        border: 1px solid rgba(37, 99, 235, 0.2) !important;
+    }
+
+    .bottom-nav .nav-item i {
+        font-size: 1.05rem !important;
+        width: 20px !important;
+        text-align: center !important;
+    }
+
+    header.top-app-bar,
+    .top-app-bar,
+    .app-header,
+    #appHeader {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        z-index: 10000 !important;
+        padding: 8px 32px !important;
+        box-sizing: border-box !important;
+    }
+
+    #appMain,
+    main.container,
+    .main-layout,
+    .container {
+        margin-left: 140px !important;
+        width: calc(100% - 140px) !important;
+        max-width: calc(100% - 140px) !important;
+        padding: 4px 16px 0 16px !important; /* 하단 패딩 0으로 비워서 달력 100vh 피팅 공간 최대 확보 */
+        box-sizing: border-box !important;
+    }
+
+    /* 🏠 [1920 대시보드 풀 와이드] */
+    #tabDashboard,
+    .dashboard-container {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .metrics-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 20px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* 💡 [1920 아이디어 보드 4열 풀 와이드] */
+    #tabIdeas,
+    .ideas-container {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    #ideaGrid,
+    .ideas-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 20px !important;
+    /* 📅 [1920 FHD 시원시원한 스크롤 달력] */
+    #tabCalendar,
+    .calendar-container,
+    #calendarGrid {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    #tabCalendar {
+        height: auto !important;
+        overflow: visible !important;
+        padding-bottom: 60px !important;
+        margin-bottom: 60px !important;
+    }
+
+    #tabCalendar .calendar-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 16px 20px 30px 20px !important;
+        margin-bottom: 60px !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .cal-day-cell {
+        min-height: 100px !important;
+        height: auto !important;
+        max-height: none !important;
+        padding: 6px 8px !important;
+        box-sizing: border-box !important;
+        border-radius: 8px !important;
+    }
+}
+
+/* 🔤 [달력 뱃지 전용 (작게/더작게/아주작게) 초콤팩트 컨트롤 & 자식 텍스트 전체 동기화] */
+.cal-badge-item * {
+    font-size: inherit !important;
+}
+
+body[data-fontsize="small"] .cal-badge-item,
+body[data-fontsize="small"] .cal-badge-item * {
+    font-size: 0.68rem !important;
+    padding: 1px 4px !important;
+    margin-bottom: 2px !important;
+}
+
+body[data-fontsize="xsmall"] .cal-badge-item,
+body[data-fontsize="xsmall"] .cal-badge-item * {
+    font-size: 0.60rem !important;
+    padding: 1px 3px !important;
+    margin-bottom: 1px !important;
+}
+
+body[data-fontsize="micro"] .cal-badge-item,
+body[data-fontsize="micro"] .cal-badge-item * {
+    font-size: 0.52rem !important;
+    padding: 0px 2px !important;
+    margin-bottom: 1px !important;
+    line-height: 1.1 !important;
+}
+
+    /* 📝 [1920 회의록 보드 풀 와이드] */
+    #tabMeeting,
+    .meetings-container {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    #tabKanban {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    #tabKanban .kanban-board,
+    .kanban-board {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 20px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        align-items: start !important;
+    }
+
+    #tabKanban .kanban-column,
+    .kanban-column {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    #tabCalendar {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    #tabCalendar .calendar-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 24px !important;
+        border-radius: 20px !important;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04) !important;
+    }
+
+    .cal-day-cell {
+        height: 145px !important;
+        min-height: 145px !important;
+        max-height: 145px !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: stretch !important;
+        padding: 10px !important;
+        box-sizing: border-box !important;
+        border-radius: 14px !important;
+        background: #ffffff !important;
+        border: 1px solid rgba(15, 23, 42, 0.08) !important;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02) !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .cal-day-cell:hover {
+        border-color: rgba(37, 99, 235, 0.3) !important;
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.1) !important;
+        transform: translateY(-2px) !important;
+    }
+
+    .cal-badge-item {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 6px 10px !important;
+        border-radius: 8px !important;
+        margin-top: 4px !important;
+        font-size: 0.8rem !important;
+        font-weight: 800 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03) !important;
+    }
+}
+
+@media (max-width: 1023px) {
+    .cal-day-cell {
+        height: 64px !important;
+        min-height: 64px !important;
+        max-height: 64px !important;
+        padding: 3px !important;
+        border-radius: 8px !important;
+    }
+
+    .cal-badge-item {
+        padding: 2px 4px !important;
+        font-size: 0.7rem !important;
+        border-radius: 6px !important;
+        margin-top: 1px !important;
+    }
+}
+
+/* 🏷️ [칸반 보드 수량 수치 명품 컬러 뱃지 시스템] */
+.column-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.88rem !important;
+    font-weight: 800 !important;
+    padding: 3px 10px !important;
+    border-radius: 12px !important;
+    margin-left: 8px !important;
+    line-height: 1 !important;
+}
+
+.header-todo .column-badge {
+    background: rgba(37, 99, 235, 0.15) !important;
+    color: #2563eb !important;
+    border: 1px solid rgba(37, 99, 235, 0.3) !important;
+}
+
+.header-in-progress .column-badge {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #d97706 !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+.header-done .column-badge {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #059669 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+/* -----------------------------------------------------------------
+   칸반 보드 & 팀 회의록 3열 기둥 박스 내부 독립 스크롤 (Inner Scroll)
+   ----------------------------------------------------------------- */
+.kanban-column, .meeting-column {
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: calc(100vh - 200px) !important;
+    height: calc(100vh - 200px) !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+.kanban-cards-list, .meeting-cards-list {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding-right: 4px !important;
+    box-sizing: border-box !important;
+}
+
+/* 슬림 6px 커스텀 스크롤바 디자인 */
+.kanban-cards-list::-webkit-scrollbar,
+.meeting-cards-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.kanban-cards-list::-webkit-scrollbar-track,
+.meeting-cards-list::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.04);
+    border-radius: 4px;
+}
+
+.kanban-cards-list::-webkit-scrollbar-thumb,
+.meeting-cards-list::-webkit-scrollbar-thumb {
+    background: rgba(37, 99, 235, 0.25);
+    border-radius: 4px;
+}
+
+.kanban-cards-list::-webkit-scrollbar-thumb:hover,
+.meeting-cards-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(37, 99, 235, 0.5);
+}
+
+/* 🌟 [명품 성공 토스트 알림 & 반짝 하이라이트 애니메이션 효과] */
+@keyframes toastSlideDown {
+    0% { transform: translate(-50%, -100%); opacity: 0; }
+    15% { transform: translate(-50%, 0); opacity: 1; }
+    85% { transform: translate(-50%, 0); opacity: 1; }
+    100% { transform: translate(-50%, -100%); opacity: 0; }
+}
+
+.custom-success-toast {
+    position: fixed !important;
+    top: 24px !important;
+    left: 50% !important;
+    transform: translate(-50%, 0) !important;
+    background: #0f172a !important;
+    color: #ffffff !important;
+    padding: 12px 24px !important;
+    border-radius: 9999px !important;
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.35), 0 0 15px rgba(37, 99, 235, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    z-index: 999999999 !important;
+    animation: toastSlideDown 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    pointer-events: none !important;
+}
+
+.custom-success-toast.toast-edit {
+    background: #1e1b4b !important;
+    border-color: rgba(168, 85, 247, 0.4) !important;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.35), 0 0 18px rgba(168, 85, 247, 0.5) !important;
+    color: #f3e8ff !important;
+}
+
+.custom-success-toast.toast-delete {
+    background: #450a0a !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.35), 0 0 18px rgba(239, 68, 68, 0.5) !important;
+    color: #fef2f2 !important;
+}
+
+@keyframes glowPulseHighlight {
+    0% { background-color: rgba(37, 99, 235, 0.25) !important; border-color: #2563eb !important; transform: scale(1.03); box-shadow: 0 0 18px rgba(37, 99, 235, 0.4) !important; }
+    50% { background-color: rgba(37, 99, 235, 0.15) !important; border-color: #2563eb !important; transform: scale(1.01); box-shadow: 0 0 12px rgba(37, 99, 235, 0.25) !important; }
+    100% { transform: scale(1); }
+}
+
+.schedule-highlight-pulse {
+    animation: glowPulseHighlight 1.6s ease-in-out !important;
+}
+
+/* 📋 [칸반 카드: 전체 4면 상태별 2px 네온 테두리 & Soft Tint 배경 & 호버 4px 플로팅] */
+.kanban-card-slim {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, background-color 0.22s ease !important;
+    border-width: 2px !important;
+    border-style: solid !important;
+}
+
+.kanban-card-slim.status-todo {
+    border-color: rgba(37, 99, 235, 0.38) !important;
+    background-color: #f8fafc !important;
+    box-shadow: 0 3px 12px rgba(37, 99, 235, 0.06) !important;
+}
+
+.kanban-card-slim.status-in_progress {
+    border-color: rgba(245, 158, 11, 0.45) !important;
+    background-color: #fefdf8 !important;
+    box-shadow: 0 3px 12px rgba(245, 158, 11, 0.06) !important;
+}
+
+.kanban-card-slim.status-done {
+    border-color: rgba(16, 185, 129, 0.38) !important;
+    background-color: #f8fdfa !important;
+    box-shadow: 0 3px 12px rgba(16, 185, 129, 0.06) !important;
+}
+
+.kanban-card-slim:hover {
+    transform: translateY(-4px) scale(1.008) !important;
+}
+
+.kanban-card-slim.status-todo:hover {
+    border-color: #2563eb !important;
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18) !important;
+    background-color: #ffffff !important;
+}
+
+.kanban-card-slim.status-in_progress:hover {
+    border-color: #f59e0b !important;
+    box-shadow: 0 10px 24px rgba(245, 158, 11, 0.2) !important;
+    background-color: #ffffff !important;
+}
+
+.kanban-card-slim.status-done:hover {
+    border-color: #10b981 !important;
+    box-shadow: 0 10px 24px rgba(16, 185, 129, 0.18) !important;
+    background-color: #ffffff !important;
+}
+
+/* 📝 [회의록 카드 전용: 클래식 종이 서류 노트 룩 (칸반과 1,000% 명확 대조!)] */
+.meeting-card-slim {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(148, 163, 184, 0.28) !important;
+    border-top-width: 4.5px !important;
+    border-top-style: solid !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease !important;
+}
+
+.meeting-card-slim.category-project {
+    border-top-color: #2563eb !important;
+}
+
+.meeting-card-slim.category-idea {
+    border-top-color: #d97706 !important;
+}
+
+.meeting-card-slim.category-general {
+    border-top-color: #059669 !important;
+}
+
+.meeting-card-slim:hover {
+    transform: translateY(-4px) rotate(-0.6deg) !important;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+    background-color: #ffffff !important;
+}
+
+.meeting-card-slim.category-project:hover {
+    border-color: rgba(37, 99, 235, 0.4) !important;
+    border-top-color: #2563eb !important;
+}
+
+.meeting-card-slim.category-idea:hover {
+    border-color: rgba(217, 119, 6, 0.45) !important;
+    border-top-color: #d97706 !important;
+}
+
+.meeting-card-slim.category-general:hover {
+    border-color: rgba(5, 150, 105, 0.4) !important;
+    border-top-color: #059669 !important;
+}
+
+/* 📱 [모바일 스마트폰 전용: 미니 도트 뱃지 & 세로 꺾임 100% 소멸 명검 핏팅] */
+@media (max-width: 768px) {
+    /* 1) 스마트폰 상단 노치/상태바 42px 시원한 여백 & 배경 화이트 통일 */
+    body, .app-container {
+        padding-top: max(42px, env(safe-area-inset-top) + 24px) !important;
+        padding-bottom: 70px !important;
+        background-color: #f8fafc !important;
+    }
+
+    /* 2) 헤더 및 세로 글씨 꺾임 100% 방지 */
+    .column-header,
+    .column-header *,
+    .section-top-bar,
+    .section-top-bar * {
+        white-space: nowrap !important;
+        word-break: keep-all !important;
+        writing-mode: horizontal-tb !important;
+    }
+
+    /* 3) 대시보드 메트릭 카드 2x2 슬림 핏팅 */
+    .dashboard-metrics-grid,
+    div[style*="grid-template-columns: repeat(4"] {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    .metric-card {
+        padding: 12px 8px !important;
+    }
+
+    /* 4) 📅 모바일 달력: 긴 글자 100% 삭제! 앙증맞은 '미니 컬러 도트'만 오목조목 표출! */
+    .cal-day-cell {
+        height: 58px !important;
+        min-height: 58px !important;
+        max-height: 58px !important;
+        padding: 3px !important;
+        overflow: hidden !important;
+    }
+
+    .cal-badge-item {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 10px !important;
+        height: 10px !important;
+        min-width: 10px !important;
+        min-height: 10px !important;
+        border-radius: 5px !important;
+        padding: 0 !important;
+        margin: 2px 2px 0 0 !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+        border: none !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .cal-badge-item * {
+        display: none !important;
+    }
+
+    /* 5) 📋 모바일 칸반 & 회의록 & 아이디어: 세로 3열 찌그러짐 소멸 ➔ 시원시원한 1열 콤팩트 카드 뷰 */
+    .kanban-board,
+    .meetings-container,
+    div[style*="grid-template-columns: repeat(3"] {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        width: 100% !important;
+    }
+
+    .kanban-column,
+    .meeting-column {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        height: auto !important;
+        border-radius: 16px !important;
+        padding: 14px !important;
+    }
+
+    .kanban-cards-list,
+    .selected-tasks-list,
+    .ideas-cards-list,
+    .meeting-cards-list {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .kanban-card-slim,
+    .idea-card {
+        padding: 10px 12px !important;
+        margin-bottom: 0 !important;
+        font-size: 0.85rem !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 6) 📝 모바일 회의록: 웹과 100% 동일한 순백 종이 서류 룩 최신 연동 */
+    .meeting-card-slim {
+        background-color: #ffffff !important;
+        border: 1px solid rgba(148, 163, 184, 0.28) !important;
+        border-top-width: 4.5px !important;
+        border-top-style: solid !important;
+        padding: 10px 12px !important;
+        font-size: 0.85rem !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .meeting-card-slim.category-project { border-top-color: #2563eb !important; }
+    .meeting-card-slim.category-idea { border-top-color: #d97706 !important; }
+    .meeting-card-slim.category-general { border-top-color: #059669 !important; }
+
+    /* 7) 모바일 폰트 및 모달 스마트폰 핏팅 */
+    .modal-content {
+        width: 94% !important;
+        max-width: 94% !important;
+        border-radius: 20px !important;
+        padding: 16px !important;
+    }
+}
+
+/* 📱 모바일 시원한 청량 파란색 FAB 원터치 작성 버튼 */
+.mobile-fab-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    width: 54px;
+    height: 54px;
+    border-radius: 27px;
+    background: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4), 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.mobile-fab-btn:active {
+    transform: scale(0.92);
+}
+

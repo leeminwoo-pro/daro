@@ -1,0 +1,6 @@
+{
+  "appId": "com.doyakdaro.app",
+  "appName": "도약다로",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
