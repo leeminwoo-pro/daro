@@ -300,12 +300,91 @@
             }
             if (!AppState.validNfcTags || !Array.isArray(AppState.validNfcTags) || AppState.validNfcTags.length === 0) {
                 AppState.validNfcTags = [
-                    { tag_code: 'DOYAK_NFC_OFFICE_MAIN_2026', tag_uid: '04:A2:8F:B2:1C:60:80', location_name: '본사 메인 출입문', is_active: true }
+                    { tag_code: 'DOYAK_NFC_HQ_2026', tag_uid: '04:A2:8F:B2:1C:60:80', location_name: '🏢 본사', is_active: true },
+                    { tag_code: 'DOYAK_NFC_ELECTRONICS_2026', tag_uid: '04:B3:9C:C3:2D:70:90', location_name: '⚡ 전자', is_active: true },
+                    { tag_code: 'DOYAK_NFC_PYEONGTAEK_2026', tag_uid: '04:C4:0D:D4:3E:80:A0', location_name: '🏭 평택', is_active: true }
                 ];
                 try { localStorage.setItem('doyakdaro_valid_nfc_tags', JSON.stringify(AppState.validNfcTags)); } catch (e) { }
             }
             return AppState.validNfcTags;
         }
+
+        async function directProcessNFCTagClockIn(tagIdInput, targetUserName) {
+            var actorName = targetUserName || (typeof getCurrentActorName === 'function' ? getCurrentActorName() : '팀원');
+            
+            // 🔒 1회 기기 보안 락 검증
+            if (typeof checkDeviceLockSecurity === 'function') {
+                var isLockOk = await checkDeviceLockSecurity(actorName);
+                if (!isLockOk) return false;
+            }
+
+            var tagsList = getValidNfcTagsList();
+            var matchedTag = tagsList.find(function(t) {
+                return (t.tag_code === tagIdInput || t.tag_uid === tagIdInput || tagIdInput.indexOf(t.tag_code) !== -1);
+            });
+
+            var locationName = matchedTag ? matchedTag.location_name : '🏢 본사';
+            var safeTodayStr = new Date().toISOString().substring(0, 10);
+            var nowIso = new Date().toISOString();
+
+            if (!AppState.attendanceRecords) AppState.attendanceRecords = [];
+            
+            var existingRecord = AppState.attendanceRecords.find(function(r) {
+                var rDate = r.workDate ? String(r.workDate).substring(0, 10) : '';
+                return (r.userName === actorName || r.userId === actorName) && rDate === safeTodayStr;
+            });
+
+            if (existingRecord) {
+                existingRecord.status = 'WORKING';
+                existingRecord.clockIn = nowIso;
+                existingRecord.locationName = locationName;
+                existingRecord.checkInType = 'NFC';
+            } else {
+                var newRec = {
+                    id: 'ATT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                    userName: actorName,
+                    userId: actorName,
+                    workDate: safeTodayStr,
+                    clockIn: nowIso,
+                    clockOut: null,
+                    status: 'WORKING',
+                    locationName: locationName,
+                    checkInType: 'NFC',
+                    mealDeductionHours: 1.0,
+                    overtimeHours: 0.0,
+                    isWeekend: (new Date().getDay() === 0 || new Date().getDay() === 6)
+                };
+                AppState.attendanceRecords.unshift(newRec);
+            }
+
+            try { localStorage.setItem('doyakdaro_attendance_records', JSON.stringify(AppState.attendanceRecords)); } catch(e){}
+
+            if (window.supabaseClient) {
+                try {
+                    await window.supabaseClient.from('attendance_logs').upsert([{
+                        user_name: actorName,
+                        work_date: safeTodayStr,
+                        clock_in: nowIso,
+                        status: 'WORKING',
+                        location_name: locationName,
+                        check_in_type: 'NFC',
+                        meal_deduction_hours: 1.0,
+                        is_weekend: (new Date().getDay() === 0 || new Date().getDay() === 6)
+                    }]);
+                } catch(e){}
+            }
+
+            if (typeof confetti === 'function') {
+                try { confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } }); } catch(e){}
+            }
+            if (typeof playGoalDoneSound === 'function') playGoalDoneSound();
+
+            if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
+            
+            alert(`🎉 [NFC 태깅 성공]\n👤 '${actorName}' 님 '${locationName}' 출근 완벽 등록!`);
+            return true;
+        }
+        window.directProcessNFCTagClockIn = directProcessNFCTagClockIn;
 
         function directRenderAdminNfcTagList() {
             var container = document.getElementById('adminNfcTagList');
@@ -411,6 +490,100 @@
             directRenderAdminNfcTagList();
         }
         window.directDeleteNFCTag = directDeleteNFCTag;
+
+        // 🔒 [최초 1회 기기 바인딩 & 보안 락 엔진]
+        function getOrCreateDeviceUUID() {
+            var uuid = localStorage.getItem('doyakdaro_device_uuid');
+            if (!uuid) {
+                uuid = 'DEV_' + (Math.random().toString(36).substring(2, 11)) + '_' + Date.now();
+                try { localStorage.setItem('doyakdaro_device_uuid', uuid); } catch (e) { }
+            }
+            return uuid;
+        }
+        window.getOrCreateDeviceUUID = getOrCreateDeviceUUID;
+
+        async function checkDeviceLockSecurity(userName) {
+            if (!userName) return true;
+            var deviceUUID = getOrCreateDeviceUUID();
+            
+            var boundUserMap = {};
+            try { boundUserMap = JSON.parse(localStorage.getItem('doyakdaro_device_locks') || '{}'); } catch(e){}
+            
+            if (window.supabaseClient) {
+                try {
+                    var res = await window.supabaseClient
+                        .from('user_device_locks')
+                        .select('*')
+                        .eq('user_name', userName);
+
+                    if (res && res.data && res.data.length > 0) {
+                        var lockData = res.data[0];
+                        if (lockData.device_uuid !== deviceUUID && lockData.is_approved_by_admin === false) {
+                            directShowDeviceLockModal(userName, lockData.bound_at);
+                            return false;
+                        }
+                    } else {
+                        await window.supabaseClient
+                            .from('user_device_locks')
+                            .insert([{ user_name: userName, device_uuid: deviceUUID, is_approved_by_admin: true }]);
+                    }
+                } catch(e) {}
+            }
+
+            if (boundUserMap[userName] && boundUserMap[userName] !== deviceUUID) {
+                directShowDeviceLockModal(userName, new Date().toISOString());
+                return false;
+            } else {
+                boundUserMap[userName] = deviceUUID;
+                try { localStorage.setItem('doyakdaro_device_locks', JSON.stringify(boundUserMap)); } catch(e){}
+            }
+            return true;
+        }
+        window.checkDeviceLockSecurity = checkDeviceLockSecurity;
+
+        function directShowDeviceLockModal(userName, boundAt) {
+            var modal = document.getElementById('deviceLockNoticeModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'deviceLockNoticeModal';
+                modal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.85); backdrop-filter:blur(10px); z-index:999999999; display:flex; align-items:center; justify-content:center; padding:20px;';
+                document.body.appendChild(modal);
+            }
+            var dateStr = boundAt ? new Date(boundAt).toLocaleString() : '최초 등록일 미상';
+            modal.innerHTML = `
+                <div style="background:#ffffff; max-width:420px; width:100%; border-radius:20px; padding:28px 24px; text-align:center; box-shadow:0 25px 50px -12px rgba(0,0,0,0.35); border:2px solid #ef4444;">
+                    <div style="width:64px; height:64px; background:rgba(239,68,68,0.1); color:#ef4444; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 16px;">🔒</div>
+                    <h3 style="margin:0 0 10px; color:#0f172a; font-size:1.25rem; font-weight:800;">타 기기 접속 보안 차단</h3>
+                    <p style="color:#475569; font-size:0.9rem; line-height:1.5; margin-bottom:16px;">
+                        <strong style="color:#2563eb;">'${userName}'</strong> 님은 다른 스마트폰/디바이스에 최초 1회 승인 등록되어 있습니다.<br>
+                        <span style="font-size:0.8rem; color:#64748b;">(등록 시각: ${dateStr})</span>
+                    </p>
+                    <div style="background:#fef2f2; border:1px solid #fca5a5; padding:12px; border-radius:12px; font-size:0.82rem; color:#991b1b; font-weight:700; margin-bottom:20px; text-align:left;">
+                        ⚠️ <strong>보안 수칙 경고</strong><br>
+                        대리 출퇴근 방지 및 타 사용자 계정 도용 차단을 위해 지정된 본인 단말기 외 접속이 제한됩니다.<br>
+                        기기 변경이 필요할 경우 <strong>최고 관리자</strong>에게 기기 승인 리셋을 요청하세요.
+                    </div>
+                    <button type="button" onclick="location.reload()" style="width:100%; padding:12px; background:#0f172a; color:#ffffff; border:none; border-radius:12px; font-weight:800; font-size:0.95rem; cursor:pointer;">확인 및 닫기</button>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
+        window.directShowDeviceLockModal = directShowDeviceLockModal;
+
+        async function directResetUserDeviceLock(userName) {
+            if (!confirm(`🔑 '${userName}' 님의 최초 등록 기기 보안 락을 초기화/승인하시겠습니까?\n다음 접속 시 새 스마트폰이 최초 기기로 자동 바인딩됩니다.`)) return;
+            if (window.supabaseClient) {
+                try {
+                    await window.supabaseClient.from('user_device_locks').delete().eq('user_name', userName);
+                } catch(e){}
+            }
+            var boundUserMap = {};
+            try { boundUserMap = JSON.parse(localStorage.getItem('doyakdaro_device_locks') || '{}'); } catch(e){}
+            delete boundUserMap[userName];
+            try { localStorage.setItem('doyakdaro_device_locks', JSON.stringify(boundUserMap)); } catch(e){}
+            alert(`🟢 '${userName}' 님의 기기 보안 락이 성공적으로 초기화되었습니다!`);
+        }
+        window.directResetUserDeviceLock = directResetUserDeviceLock;
 
         // 🏃‍♂️ [NFC 및 수동 출퇴근 처리 1초 무적 엔진]
         function showNFCToastNotice(title, desc) {
@@ -756,7 +929,13 @@
                         workingRecords.forEach(function(r) {
                             var uName = String(r.userName || r.userId || '').trim();
                             var inT = r.clockIn ? new Date(r.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
-                            var tagHtml = '<span style="font-size:0.75rem; color:#059669; margin-left:6px; background:rgba(16,185,129,0.12); padding:3px 8px; border-radius:6px; font-weight:800;">🟢 출근 근무 중</span>';
+                            var loc = r.locationName || '🏢 본사';
+                            var typeBadge = (r.checkInType === 'MANUAL_ADMIN')
+                                ? '<span style="font-size:0.72rem; color:#d97706; background:#fffbeb; border:1px solid #fde68a; padding:2px 6px; border-radius:6px; font-weight:800;">🔑 관리자 수동</span>'
+                                : '<span style="font-size:0.72rem; color:#2563eb; background:#eff6ff; border:1px solid #bfdbfe; padding:2px 6px; border-radius:6px; font-weight:800;">📱 NFC 태깅</span>';
+                            
+                            var locBadge = '<span style="font-size:0.75rem; color:#0f172a; background:#f8fafc; border:1px solid rgba(15,23,42,0.12); padding:2px 6px; border-radius:6px; font-weight:800;">' + loc + '</span>';
+                            var tagHtml = locBadge + ' ' + typeBadge + ' <span style="font-size:0.75rem; color:#059669; background:rgba(16,185,129,0.12); padding:3px 8px; border-radius:6px; font-weight:800;">🟢 출근 중</span>';
                             var timeHtml = '⏰ 출근: ' + inT;
                             
                             var row = makeAttendanceRow(uName, tagHtml, timeHtml, true, 'working');
@@ -772,7 +951,12 @@
                             var uName = String(r.userName || r.userId || '').trim();
                             var inT = r.clockIn ? new Date(r.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
                             var outT = r.clockOut ? new Date(r.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
-                            var tagHtml = '<span style="font-size:0.75rem; color:#475569; margin-left:6px; background:#f1f5f9; padding:3px 8px; border-radius:6px; font-weight:800;">⚪ 퇴근 완료</span>';
+                            var loc = r.locationName || '🏢 본사';
+                            var typeBadge = (r.checkInType === 'MANUAL_ADMIN')
+                                ? '<span style="font-size:0.72rem; color:#d97706; background:#fffbeb; border:1px solid #fde68a; padding:2px 6px; border-radius:6px; font-weight:800;">🔑 수동</span>'
+                                : '<span style="font-size:0.72rem; color:#2563eb; background:#eff6ff; border:1px solid #bfdbfe; padding:2px 6px; border-radius:6px; font-weight:800;">📱 NFC</span>';
+                            var locBadge = '<span style="font-size:0.75rem; color:#0f172a; background:#f8fafc; border:1px solid rgba(15,23,42,0.12); padding:2px 6px; border-radius:6px; font-weight:800;">' + loc + '</span>';
+                            var tagHtml = locBadge + ' ' + typeBadge + ' <span style="font-size:0.75rem; color:#475569; background:#f1f5f9; padding:3px 8px; border-radius:6px; font-weight:800;">⚪ 퇴근 완료</span>';
                             var timeHtml = '⏱️ 퇴근: ' + outT + ' (' + (r.totalHours||0) + 'h)';
                             
                             var row = makeAttendanceRow(uName, tagHtml, timeHtml, false, 'completed');
@@ -822,6 +1006,93 @@
             }
         }
         window.directRenderAttendanceUI = directRenderAttendanceUI;
+
+        // 🔑 [최고 관리자 수동 출퇴근 인정 및 사업장 지정 엔진]
+        async function directAdminClockToggleUserByName(targetUserName, isClockIn) {
+            if (!targetUserName) return false;
+            
+            var locationName = '🏢 본사';
+            if (isClockIn) {
+                var locChoice = prompt(`🔑 '${targetUserName}' 님 수동 출근 인정\n출근 사업장을 선택/입력해 주세요:\n1. 🏢 본사\n2. ⚡ 전자\n3. 🏭 평택`, '🏢 본사');
+                if (locChoice === null) return false;
+                if (locChoice.indexOf('전자') !== -1 || locChoice === '2') locationName = '⚡ 전자';
+                else if (locChoice.indexOf('평택') !== -1 || locChoice === '3') locationName = '🏭 평택';
+                else locationName = '🏢 본사';
+            }
+
+            var safeTodayStr = new Date().toISOString().substring(0, 10);
+            var nowIso = new Date().toISOString();
+
+            if (!AppState.attendanceRecords) AppState.attendanceRecords = [];
+            var existingRecord = AppState.attendanceRecords.find(function(r) {
+                var rDate = r.workDate ? String(r.workDate).substring(0, 10) : '';
+                return (r.userName === targetUserName || r.userId === targetUserName) && rDate === safeTodayStr;
+            });
+
+            if (isClockIn) {
+                if (existingRecord) {
+                    existingRecord.status = 'WORKING';
+                    existingRecord.clockIn = nowIso;
+                    existingRecord.locationName = locationName;
+                    existingRecord.checkInType = 'MANUAL_ADMIN';
+                } else {
+                    AppState.attendanceRecords.unshift({
+                        id: 'ATT_MANUAL_' + Date.now(),
+                        userName: targetUserName,
+                        userId: targetUserName,
+                        workDate: safeTodayStr,
+                        clockIn: nowIso,
+                        clockOut: null,
+                        status: 'WORKING',
+                        locationName: locationName,
+                        checkInType: 'MANUAL_ADMIN',
+                        mealDeductionHours: 1.0,
+                        overtimeHours: 0.0,
+                        isWeekend: (new Date().getDay() === 0 || new Date().getDay() === 6)
+                    });
+                }
+
+                if (window.supabaseClient) {
+                    try {
+                        await window.supabaseClient.from('attendance_logs').upsert([{
+                            user_name: targetUserName,
+                            work_date: safeTodayStr,
+                            clock_in: nowIso,
+                            status: 'WORKING',
+                            location_name: locationName,
+                            check_in_type: 'MANUAL_ADMIN'
+                        }]);
+                    } catch(e){}
+                }
+
+                alert(`🔑 [관리자 수동 인정]\n👤 '${targetUserName}' 님 '${locationName}' 수동 출근 처리 완료!`);
+            } else {
+                if (existingRecord) {
+                    existingRecord.status = 'COMPLETED';
+                    existingRecord.clockOut = nowIso;
+                    var inTime = existingRecord.clockIn ? new Date(existingRecord.clockIn) : new Date();
+                    var diffMs = new Date() - inTime;
+                    var totalH = Math.max(0, (diffMs / (1000 * 60 * 60)) - 1.0).toFixed(1);
+                    existingRecord.totalHours = parseFloat(totalH);
+
+                    if (window.supabaseClient) {
+                        try {
+                            await window.supabaseClient.from('attendance_logs').update({
+                                clock_out: nowIso,
+                                total_hours: parseFloat(totalH),
+                                status: 'COMPLETED'
+                            }).eq('user_name', targetUserName).eq('work_date', safeTodayStr);
+                        } catch(e){}
+                    }
+                }
+                alert(`⚪ [관리자 수동 인정]\n👤 '${targetUserName}' 님 수동 퇴근 처리 완료!`);
+            }
+
+            try { localStorage.setItem('doyakdaro_attendance_records', JSON.stringify(AppState.attendanceRecords)); } catch(e){}
+            directRenderAttendanceUI();
+            return false;
+        }
+        window.directAdminClockToggleUserByName = directAdminClockToggleUserByName;
 
         // 🏢 [유연근무제 맞춤형 개인 상세 근태 팝업 스마트 오픈 엔진]
         function directOpenFlexibleUserDetailModal(targetName) {
@@ -908,16 +1179,49 @@
                             }
                         } catch(e){}
 
-                        item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#f8fafc; border-radius:10px; border:1px solid rgba(15,23,42,0.1); font-size:0.85rem; margin-bottom:6px;';
+                        var totalH = parseFloat(r.totalHours || 0);
+                        var overtimeH = totalH > 8.0 ? (totalH - 8.0).toFixed(1) : 0;
+                        var isWeekend = r.isWeekend || false;
+                        if (!r.isWeekend && r.workDate) {
+                            var dayNum = new Date(r.workDate).getDay();
+                            if (dayNum === 0 || dayNum === 6) isWeekend = true;
+                        }
+
+                        var locBadge = '<span style="font-size:0.75rem; color:#0f172a; background:#f8fafc; border:1px solid rgba(15,23,42,0.12); padding:2px 6px; border-radius:6px; font-weight:800;">' + (r.locationName || '🏢 본사') + '</span>';
+                        var typeBadge = (r.checkInType === 'MANUAL_ADMIN')
+                            ? '<span style="font-size:0.72rem; color:#d97706; background:#fffbeb; border:1px solid #fde68a; padding:2px 6px; border-radius:6px; font-weight:800;">🔑 관리자 수동</span>'
+                            : '<span style="font-size:0.72rem; color:#2563eb; background:#eff6ff; border:1px solid #bfdbfe; padding:2px 6px; border-radius:6px; font-weight:800;">📱 NFC</span>';
+                        
+                        var mealBadge = '<span style="font-size:0.72rem; color:#64748b; background:#f1f5f9; padding:2px 6px; border-radius:6px; font-weight:700;">🍚 식사 1h 공제</span>';
+                        
+                        var overtimeBadge = (overtimeH > 0) 
+                            ? '<span style="font-size:0.72rem; color:#dc2626; background:#fef2f2; border:1px solid #fca5a5; padding:2px 6px; border-radius:6px; font-weight:800;">🔥 연장근로 +' + overtimeH + 'h</span>'
+                            : '';
+                        var weekendBadge = isWeekend 
+                            ? '<span style="font-size:0.72rem; color:#7c3aed; background:#f5f3ff; border:1px solid #ddd6fe; padding:2px 6px; border-radius:6px; font-weight:800;">✨ 주말특근</span>'
+                            : '';
+
+                        item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:#ffffff; border-radius:12px; border:1px solid rgba(15,23,42,0.1); font-size:0.85rem; margin-bottom:8px; box-shadow:0 2px 4px rgba(0,0,0,0.02);';
                         item.innerHTML = `
-                            <div>
-                                <span style="font-weight:800; color:#0f172a;">📅 ${normalizeDateStr(r.workDate)}</span>
-                                <span style="font-size:0.75rem; color:${isWorking ? '#059669' : '#2563eb'}; margin-left:6px; background:${isWorking ? 'rgba(16,185,129,0.1)' : 'rgba(37,99,235,0.08)'}; padding:2px 6px; border-radius:4px; font-weight:800;">
-                                    ${isWorking ? '🟢 출근 중' : '🏢 유연근무 인정'}
-                                </span>
+                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                    <span style="font-weight:800; color:#0f172a;">📅 ${normalizeDateStr(r.workDate)}</span>
+                                    ${locBadge}
+                                    ${typeBadge}
+                                    ${weekendBadge}
+                                </div>
+                                <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px;">
+                                    ${mealBadge}
+                                    ${overtimeBadge}
+                                </div>
                             </div>
-                            <div style="font-weight:800; color:${isWorking ? '#059669' : '#0f172a'}; font-size:0.82rem;">
-                                ${isWorking ? '⏰ 출근: ' + inT : '⏱️ ' + inT + ' ~ ' + outT + ' (' + (r.totalHours || 0) + '시간)'}
+                            <div style="text-align:right;">
+                                <div style="font-weight:800; color:${isWorking ? '#059669' : '#0f172a'}; font-size:0.85rem;">
+                                    ${isWorking ? '🟢 출근: ' + inT : '⏱️ ' + inT + ' ~ ' + outT}
+                                </div>
+                                <div style="font-size:0.78rem; font-weight:800; color:${totalH >= 8 ? '#2563eb' : '#64748b'}; margin-top:2px;">
+                                    실근무: ${totalH}h / 8h 기준
+                                </div>
                             </div>
                         `;
                         listEl.appendChild(item);
@@ -1246,8 +1550,8 @@
                     if (s.assignee && s.assignee.trim()) uNameSet[s.assignee.trim()] = true;
                 });
             }
-            // 🎯 필수 전체 21명 팀원 마스터 보완
-            ['장보고', '허영주', '허병준', '윤정숙', '연정민', '심채연', '김일섭', '박민석', '전세계', '이민우', '김진홍', '박병주'].forEach(function(n){
+            // 🎯 필수 전체 25명 팀원 마스터 보완
+            ['장보고', '허영주', '허병준', '윤정숙', '연정민', '심채연', '김일섭', '박민석', '전세계', '이민우', '김진홍', '박병주', '신주환', '강연주', '김태우', '이성재', '최지은', '정수빈', '한상우', '유재석', '조세호', '하동훈', '송지효', '김종국', '지석진'].forEach(function(n){
                 if(n) uNameSet[n.trim()] = true;
             });
 
@@ -1256,7 +1560,7 @@
             });
 
             var buttonsHtml = teamNames.map(function(name) {
-                return '<button type="button" onclick="selectMyNFCNameAndProceed(\'' + name + '\')" style="background:#ffffff; color:#0f172a; border:2px solid #e2e8f0; font-size:1.05rem; font-weight:800; padding:14px 10px; border-radius:14px; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.03); transition:all 0.1s;" onmouseover="this.style.borderColor=\'#2563eb\'; this.style.color=\'#2563eb\';" onmouseout="this.style.borderColor=\'#e2e8f0\'; this.style.color=\'#0f172a\';">👤 ' + name + '</button>';
+                return '<button type="button" onclick="selectMyNFCNameAndProceed(\'' + name + '\')" style="background:#ffffff; color:#0f172a; border:2px solid rgba(37,99,235,0.18); font-size:1.1rem; font-weight:800; padding:16px 12px; border-radius:16px; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.04); display:flex; align-items:center; justify-content:center; gap:6px; transition:transform 0.1s, border-color 0.1s;" onmouseover="this.style.borderColor=\'#2563eb\'; this.style.color=\'#2563eb\';" onmouseout="this.style.borderColor=\'rgba(37,99,235,0.18)\'; this.style.color=\'#0f172a\';">👤 ' + name + '</button>';
             }).join('');
 
             overlay.innerHTML = `
