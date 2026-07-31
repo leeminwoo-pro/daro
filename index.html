@@ -952,12 +952,9 @@
                 selectedMonth = monthFilter.value;
             }
 
-            // 팀원 필터 드롭다운 동적 채우기
+            // 팀원 필터 드롭다운 동적 채우기 (오직 전체팀원 관리표 등록 인원만!)
             if (userFilter && userFilter.options.length <= 1) {
-                var uMap = {};
-                records.forEach(function(r) { if (r.userName) uMap[r.userName] = true; });
-                userNames.forEach(function(n) { uMap[n] = true; });
-                Object.keys(uMap).forEach(function(uName) {
+                userNames.sort(function(a, b) { return a.localeCompare(b, 'ko'); }).forEach(function(uName) {
                     var opt = document.createElement('option');
                     opt.value = uName;
                     opt.textContent = '👤 ' + uName;
@@ -8949,7 +8946,7 @@
         }, 600);
     </script>
     <!-- 🚀 전역 근태 & 시스템 엔터프라이즈 엔진 스크립트 강제 바인딩 연결 (v=20260730_2303) -->
-    <script src="app.js?v=20260730_2303"></script>
+    <script src="app.js?v=20260731_1003"></script>
 </body>
 
 </html>
