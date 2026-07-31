@@ -8963,21 +8963,25 @@
             if (!targetName) return;
             if (!confirm("⚠️ 정말로 팀원 '" + targetName + "' 님을 관리표에서 삭제하시겠습니까?\n(모바일 NFC 접속 목록에서도 즉시 삭제됩니다)")) return;
 
-            // ☁️ Step 1. Supabase DB 최우선 선삭제
+            // ☁️ Step 1. Supabase Cloud DB (user_credentials) 최우선 선삭제
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (sb) {
                 try {
-                    await sb.from('user_roles').delete().eq('user_name', targetName);
+                    await sb.from('user_credentials').delete().or('username.eq.' + targetName + ',user_name.eq.' + targetName);
                 } catch(e){}
             }
 
-            // 📱 Step 2. 로컬스토리지 & 메모리 소멸
+            // 📱 Step 2. 로컬스토리지 & 메모리 완벽 동기화 세척
             if (window.AppState && window.AppState.userRoles) {
                 delete window.AppState.userRoles[targetName];
-                try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
             }
+            try {
+                var lObj = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+                delete lObj[targetName];
+                localStorage.setItem('doyakdaro_user_roles', JSON.stringify(lObj));
+            } catch(e){}
 
-            // 💻 Step 3. UI 갱신
+            // 💻 Step 3. UI 갱신 (Supabase DB 기반)
             if (typeof populateAdminUserSelect === 'function') await populateAdminUserSelect();
             if (typeof directRenderAdminUserRolesTable === 'function') await directRenderAdminUserRolesTable();
 
@@ -8985,45 +8989,39 @@
         }
         window.directDeleteUserRoleFromAdmin = directDeleteUserRoleFromAdmin;
 
-        // 👥 [최고 관리자 전용 전체 팀원 관리표 실시간 렌더러]
+        // 👥 [최고 관리자 전용 전체 팀원 관리표 실시간 렌더러 - Supabase Cloud DB 100% 직통 렌더링]
         async function directRenderAdminUserRolesTable() {
             var container = document.getElementById('adminUserRoleList');
             if (!container) return;
 
             var rolesMap = {};
-            // Supabase DB에서 최신 데이터 조회
+
+            // ☁️ Supabase Cloud DB (user_credentials)에서 최신 레코드 100% 직통 조회
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (sb) {
                 try {
-                    var res = await sb.from('user_roles').select('*');
+                    var res = await sb.from('user_credentials').select('*');
                     if (res && res.data && res.data.length > 0) {
                         res.data.forEach(function(r) {
-                            var u = r.user_name || r.userName;
-                            if (u && u.trim()) rolesMap[u.trim()] = r.role || 'writer';
+                            var rRole = r.role || 'editor';
+                            if (rRole === 'viewer') return; // 🚫 단순 뷰어 제외
+                            var u = r.username || r.user_name || r.userName;
+                            if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주') {
+                                rolesMap[u.trim()] = rRole;
+                            }
                         });
                     }
                 } catch(e){}
             }
 
-            // 로컬스토리지 백업 병합
-            try {
-                var localRoles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
-                Object.keys(localRoles).forEach(function(k) {
-                    if (k && !rolesMap[k]) rolesMap[k] = localRoles[k];
-                });
-            } catch(e){}
-
-            // 🔄 [신규 팀원 무제한 Supabase Cloud DB 자동 100% 동기화 엔진 ('전세계' 님 포함 무제한 수집 전송)]
-            if (typeof syncAllUserRolesToSupabase === 'function') syncAllUserRolesToSupabase();
-
-            // 기본 필수 4명 디폴트 보장
-            ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n) {
-                if (!rolesMap[n]) rolesMap[n] = (n === '이민우' ? 'admin' : 'writer');
-            });
-
             delete rolesMap['강연주'];
             delete rolesMap['팀원'];
             delete rolesMap['undefined'];
+
+            // 📱 AppState 및 localStorage도 Supabase DB와 100% 똑같이 동기화 세척
+            if (!window.AppState) window.AppState = {};
+            window.AppState.userRoles = rolesMap;
+            try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(rolesMap)); } catch(e){}
 
             var users = Object.keys(rolesMap).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
 
@@ -9086,20 +9084,7 @@
                 } catch(e){}
             }
 
-            // 📱 2. 로컬스토리지 및 메모리 수집
-            try {
-                var roles = window.AppState ? window.AppState.userRoles : null;
-                if (!roles) {
-                    try { roles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')); } catch(e){}
-                }
-                if (roles && typeof roles === 'object') {
-                    Object.keys(roles).forEach(function(k) {
-                        if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
-                            nameSet[k.trim()] = true;
-                        }
-                    });
-                }
-            } catch(e){}
+
 
             if (window.AppState && window.AppState.currentUser && window.AppState.currentUser.fullName) {
                 var cur = window.AppState.currentUser.fullName;
@@ -9114,14 +9099,7 @@
                 return a.localeCompare(b, 'ko');
             });
 
-            // 🛡️ [버그 차단 핵심!] 팀원이 0명일 때만 최소 4명 디폴트 노출 보장
-            if (users.length === 0) {
-                ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n){ nameSet[n] = true; });
-                users = Object.keys(nameSet).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
-            }
 
-            // 🔄 [PC 명단 5명 Supabase Cloud DB 자동 100% 동기화 엔진]
-            syncAllUserRolesToSupabase();
 
             selects.forEach(function(sel) {
                 if (!sel) return;
