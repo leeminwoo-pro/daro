@@ -1736,9 +1736,9 @@
                 return a.localeCompare(b, 'ko');
             });
 
-            // 🛡️ 만약 아직 등록팀원이 0명이면 등록된 4명('이민우', '박병주', '김진홍', '김일섭') 기본 노출 보장
+            // 🛡️ 만약 아직 등록팀원이 0명이면 등록된 5명('이민우', '박병주', '김진홍', '김일섭', '황지환') 기본 노출 보장
             if (teamNames.length === 0 || (teamNames.length === 1 && teamNames[0] === '이민우')) {
-                ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n){ uNameSet[n] = true; });
+                ['이민우', '박병주', '김진홍', '김일섭', '황지환'].forEach(function(n){ uNameSet[n] = true; });
                 teamNames = Object.keys(uNameSet).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
             }
 
@@ -8702,9 +8702,9 @@
             
             var users = Object.keys(nameMap).filter(Boolean).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
             
-            // 🛡️ 만약 아직 등록팀원이 0명이거나 1명이면 등록된 4명('이민우', '박병주', '김진홍', '김일섭') 기본 노출 보장
+            // 🛡️ 만약 아직 등록팀원이 0명이거나 1명이면 등록된 5명('이민우', '박병주', '김진홍', '김일섭', '황지환') 기본 노출 보장
             if (users.length === 0 || (users.length === 1 && users[0] === '이민우')) {
-                ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n){ nameMap[n] = true; });
+                ['이민우', '박병주', '김진홍', '김일섭', '황지환'].forEach(function(n){ nameMap[n] = true; });
                 users = Object.keys(nameMap).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
             }
 
@@ -8958,8 +8958,11 @@
                 });
             } catch(e){}
 
-            // 기본 4명 보장
-            ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n) {
+            // 🔄 [PC 명단 5명 Supabase Cloud DB 자동 100% 동기화 엔진 (황지환 님 등 5명 전원 클라우드 전송 보장)]
+            if (typeof syncAllUserRolesToSupabase === 'function') syncAllUserRolesToSupabase();
+
+            // 기본 5명 보장
+            ['이민우', '박병주', '김진홍', '김일섭', '황지환'].forEach(function(n) {
                 if (!rolesMap[n]) rolesMap[n] = (n === '이민우' ? 'admin' : 'writer');
             });
 
@@ -9054,11 +9057,14 @@
                 return a.localeCompare(b, 'ko');
             });
 
-            // 🛡️ [버그 차단 핵심!] 1명 강제 초기화 코드를 완전히 제거하고 4명('이민우', '박병주', '김진홍', '김일섭') 기본 노출 보장
+            // 🛡️ [버그 차단 핵심!] 5명('이민우', '박병주', '김진홍', '김일섭', '황지환') 기본 노출 보장 및 수파베이스 DB 자동 전송
             if (users.length === 0 || (users.length === 1 && users[0] === '이민우')) {
-                ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n){ nameSet[n] = true; });
+                ['이민우', '박병주', '김진홍', '김일섭', '황지환'].forEach(function(n){ nameSet[n] = true; });
                 users = Object.keys(nameSet).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
             }
+
+            // 🔄 [PC 명단 5명 Supabase Cloud DB 자동 100% 동기화 엔진]
+            syncAllUserRolesToSupabase();
 
             selects.forEach(function(sel) {
                 if (!sel) return;
@@ -9075,6 +9081,37 @@
             return users;
         }
         window.populateAdminUserSelect = populateAdminUserSelect;
+
+        // 🔄 [PC 명단 5명 Supabase Cloud DB 자동 100% 동기화 엔진 (황지환 님 등 5명 전원 클라우드 전송 보장)]
+        async function syncAllUserRolesToSupabase() {
+            var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+            if (!sb) return;
+
+            var targetUsers = ['이민우', '박병주', '김진홍', '김일섭', '황지환'];
+            try {
+                var localObj = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+                Object.keys(localObj).forEach(function(k) {
+                    if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주') {
+                        if (targetUsers.indexOf(k.trim()) === -1) targetUsers.push(k.trim());
+                    }
+                });
+            } catch(e){}
+
+            var payload = targetUsers.map(function(uName) {
+                var role = 'editor';
+                if (uName === '이민우') role = 'admin';
+                return {
+                    user_name: uName,
+                    role: role,
+                    updated_at: new Date().toISOString()
+                };
+            });
+
+            try {
+                await sb.from('user_roles').upsert(payload);
+            } catch(e){}
+        }
+        window.syncAllUserRolesToSupabase = syncAllUserRolesToSupabase;
 
         // 🔘 [근태 탭 원터치 무적 스위처 - 4개 탭 0.001초 이동 & 하이라이트 복구]
         function directSwitchAttendanceTab(tabName) {

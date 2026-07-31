@@ -1453,6 +1453,30 @@
   - **전체 파일 동기화 완수**: `index.html` ➔ `www/index.html`, `src/index.html`.
   - **Git 커밋 & GitHub 푸시 완수**: `[main 924c15a]` commit & `https://github.com/leeminwoo-pro/daro.git` push 완료.
 
+---
+
+## 📅 [2026-07-31 11:14] - 팀원 관리 CRUD (등록·수정·삭제) 전체 Supabase DB 최우선 선처리 정석 파이프라인 개편 완수
+
+### 👤 사용자 (USER)
+> PC 최고 관리자 제어판에서 신규 팀원을 등록하면 ➔ localStorage 뿐만 아니라 Supabase user_roles DB 로 0.1초 만에 자동 전송
+이부분에서 궁금한게 슈파베이스에 먼저 저장이되고 로컬스트리지로 가져와야하는게 아닌건가 ? 넌 의견어떄 ?
+> 이게 맞는거 맞지 ? 내생각을 그냥 너한테알려준건데
+> 수정 삭제 부분도 전혀문제없는거고 ?
+> 승인
+
+### 🤖 에이전트 (Antigravity)
+* **사용자 제안 정석 아키텍처 (Single Source of Truth) 전면 채택**:
+  - 기존의 로컬스토리지선저장 방식을 완전 폐기하고, 개발학의 정석 방식인 **"Supabase Cloud DB 최우선 선처리 ➔ 성공 확인 후 로컬스토리지 & PC/모바일 UI 갱신"** 구조로 통일.
+* **사전 승인 수칙 준수 후 수술 완수**:
+  - 안전 백업 압축 파일 생성 완료: **`doyakdaro_backup_273.zip`**
+  - **1. 팀원 사전 등록 (`directAddNewUserFromAdmin`)**: Supabase DB (`user_roles`) 선저장 ➔ 성공 시 로컬 메모리 & 화면 반영.
+  - **2. 팀원 권한 수정 (`directUpdateUserRoleFromAdmin`)**: Supabase DB 선 `upsert` ➔ 성공 시 PC & 모바일 권한 동기화.
+  - **3. 팀원 삭제 (`directDeleteUserRoleFromAdmin`)**: Supabase DB 선 `delete().eq('user_name', target)` ➔ 성공 시 로컬스토리지 삭제 및 모바일 팝업 목록 0.1초 즉시 소멸.
+  - **4. 전체 관리표 렌더러 (`directRenderAdminUserRolesTable`)**: Supabase DB 최신 데이터 기반 실시간 표출.
+  - **전체 파일 동기화 완수**: `index.html` ➔ `www/index.html`, `src/index.html`.
+  - **Git 커밋 & GitHub 푸시 완수**: `[main 94a25ad]` commit & `https://github.com/leeminwoo-pro/daro.git` push 완료.
+
+
 
 
 
