@@ -393,11 +393,14 @@
 
             if (window.supabaseClient) {
                 try {
-                    await window.supabaseClient.from('attendance_logs').upsert([{
+                    await window.supabaseClient.from('attendance_records').upsert([{
+                        id: 'att-' + encodeURIComponent(actorName) + '-' + safeTodayStr,
+                        user_id: actorName,
                         user_name: actorName,
                         work_date: safeTodayStr,
                         clock_in: nowIso,
                         status: 'WORKING',
+                        nfc_tagged: true,
                         location_name: locationName,
                         check_in_type: 'NFC',
                         meal_deduction_hours: 1.0,
@@ -1086,11 +1089,14 @@
 
                 if (window.supabaseClient) {
                     try {
-                        await window.supabaseClient.from('attendance_logs').upsert([{
+                        await window.supabaseClient.from('attendance_records').upsert([{
+                            id: 'att-' + encodeURIComponent(targetUserName) + '-' + safeTodayStr,
+                            user_id: targetUserName,
                             user_name: targetUserName,
                             work_date: safeTodayStr,
                             clock_in: nowIso,
                             status: 'WORKING',
+                            nfc_tagged: false,
                             location_name: locationName,
                             check_in_type: 'MANUAL_ADMIN'
                         }]);
