@@ -1724,16 +1724,9 @@
                 }
             } catch(e){}
 
-            // 🏃‍♂️ 3. 최근 근태 레코드 유저 수집
-            try {
-                var records = AppState.attendanceRecords || JSON.parse(localStorage.getItem('doyakdaro_attendance_records')) || [];
-                records.forEach(function(r) {
-                    var name = r.userName || r.userId;
-                    if (name && name.trim() && name.trim() !== '팀원' && name.trim() !== '강연주' && name.trim() !== 'undefined') {
-                        uNameSet[name.trim()] = true;
-                    }
-                });
-            } catch(e){}
+            // 🛡️ [과거 찌꺼기 레코드 완전 소멸 수술] 과거 출퇴근 기록(attendance_records)의 옛날 테스트 이름들(연정민, 강명균, 전세계 등)은 
+            // 모바일 본인 이름 선택 팝업에 표출되지 않도록 수집 로직을 100% 완전 삭제하였습니다.
+            // 오직 PC 최고 관리자 제어판 '전체 팀원 관리표'(user_roles)에 정식 등록된 실존 유저만 1대1 매핑됩니다.
 
             if (AppState.currentUser && AppState.currentUser.fullName && AppState.currentUser.fullName.trim() !== '팀원') {
                 uNameSet[AppState.currentUser.fullName.trim()] = true;
