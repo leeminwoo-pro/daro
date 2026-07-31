@@ -1495,6 +1495,26 @@
   - **전체 파일 동기화 완수**: `index.html` ➔ `www/index.html`, `src/index.html`.
   - **Git 커밋 & GitHub 푸시 완수**: `[main e676241]` commit & `https://github.com/leeminwoo-pro/daro.git` push 완료.
 
+---
+
+## 📅 [2026-07-31 12:30] - 고정 배열 오버라이드 소멸 및 '전세계' 님 포함 신규 팀원 무제한 Supabase DB 동적 연동 수술 완수
+
+### 👤 사용자 (USER)
+> 새로운 사람 전세계를 PC에서 추가했는데 핸드폰 NFC태그해보면 아직 5명이뜨는데 왜그러는걸까 ? 다른 문자가있는지 원인분석이 필요할거같은데 ? NFC태그한 모바일도 수파베이스에서 정보를 가져오는게 맞을까 ?
+> 이부분을 수정하면 다른 추가인원도 그렇게 적용이되는거겠지 ?
+> 승인
+
+### 🤖 에이전트 (Antigravity)
+* **결정적 범인 정밀 규명**:
+  - `(users.length === 1 && users[0] === '이민우')` 오버라이드 조건문 및 `syncAllUserRolesToSupabase()` 내 고정 5명 하드코딩 배열이 새로 등록한 '전세계' 님을 기존 5명 목록으로 강제 덮어쓰고 있었던 원인을 명쾌하게 규명함.
+* **사전 승인 수칙 준수 후 수술 완수**:
+  - 안전 백업 압축 파일 생성 완료: **`doyakdaro_backup_275.zip`**
+  - **하드코딩 고정 배열 100% 완전 소멸**: 오버라이드 덮어쓰기 조건문 제거 및 무제한 동적 수집 업서트 엔진 구축!
+  - **'전세계' 님 포함 신규 인원 무제한 동적 연동**: PC에서 추가하는 인원이 6명이든 10명이든 100% 동적으로 수파베이스 DB (`user_roles`) 에 업서트 전송되고, 모바일 폰에서도 최신 전체 명단이 짠! 하고 표출되도록 수술 완성.
+  - **전체 파일 동기화 완수**: `index.html` ➔ `www/index.html`, `src/index.html`.
+  - **Git 커밋 & GitHub 푸시 완수**: `[main d7f2eb2]` commit & `https://github.com/leeminwoo-pro/daro.git` push 완료.
+
+
 
 
 
