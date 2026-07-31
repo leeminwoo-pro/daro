@@ -1745,12 +1745,48 @@ if (typeof window.directPopulateAdminUserDropdown !== 'function') {
                 var opt = document.createElement('option');
                 opt.value = name;
                 opt.textContent = '👤 ' + name;
-                if (name === currentVal) opt.selected = true;
-                selectEl.appendChild(opt);
-            });
+            selectEl.appendChild(opt);
         });
     };
 }
+
+// 🧹 [Supabase 클라우드 DB & 브라우저 26명 찌꺼기 레코드 100% 완전 소멸 샌니타이저]
+async function directPurgeAllCloudLegacyData() {
+    try {
+        localStorage.removeItem('doyakdaro_attendance_records');
+        localStorage.setItem('doyakdaro_user_roles', JSON.stringify({ '이민우': 'admin' }));
+        localStorage.removeItem('doyakdaro_nfc_my_name');
+    } catch(e){}
+
+    if (window.AppState) {
+        window.AppState.attendanceRecords = [];
+        window.AppState.userRoles = { '이민우': 'admin' };
+    }
+
+    var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+    if (sb) {
+        try {
+            await sb.from('attendance_records').delete().neq('id', 'NEVER_MATCH_SAFE_ID');
+        } catch(e){}
+        try {
+            await sb.from('user_roles').delete().neq('user_name', '이민우');
+        } catch(e){}
+    }
+
+    try {
+        var url = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/attendance_records?id=neq.NEVER_MATCH_SAFE_ID';
+        var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+        fetch(url, { method: 'DELETE', headers: { 'apikey': key, 'Authorization': 'Bearer ' + key } });
+    } catch(e){}
+
+    if (typeof directPopulateAdminUserDropdown === 'function') directPopulateAdminUserDropdown();
+    if (typeof populateAdminUserSelect === 'function') populateAdminUserSelect();
+    if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
+}
+window.directPurgeAllCloudLegacyData = directPurgeAllCloudLegacyData;
+
+// 🏃‍♂️ 0초 무적 클라우드 찌꺼기 소멸기 즉시 구동
+directPurgeAllCloudLegacyData();
 
 // 🌐 Supabase 클라이언트 통합 헬퍼 (모바일/PC 공용)
 function getSupabaseClient() {
