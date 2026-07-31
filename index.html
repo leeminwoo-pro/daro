@@ -5348,24 +5348,20 @@
             directOpenAdminModal();
         }
 
-        // 👑 [관리자 전용 제어판 & 삭제 데이터 복구 센터 모달 열기]
-        function directOpenAdminModal() {
+        // 👑 [관리자 전용 제어판 & 삭제 데이터 복구 센터 모달 열기 - Supabase DB 100% 직통 렌더링]
+        async function directOpenAdminModal() {
             var modal = document.getElementById('adminControlModal');
             if (modal) {
                 modal.style.display = 'flex';
                 modal.style.zIndex = '9999999';
             }
 
-            try {
-                AppState.userRoles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || AppState.userRoles || { '이민우': 'admin' };
-            } catch (e) { }
-
-            try { directRenderUserRoles(); } catch (e) { }
-
-            if (typeof fetchUserRolesFromCloud === 'function') {
-                fetchUserRolesFromCloud(function () {
-                    try { directRenderUserRoles(); } catch (e) { }
-                });
+            // ☁️ 구형 덮어쓰기 오염 함수 무시하고 Supabase Cloud DB (user_credentials) 무적 직통 렌더러 즉시 실행!!
+            if (typeof directRenderAdminUserRolesTable === 'function') {
+                await directRenderAdminUserRolesTable();
+            }
+            if (typeof populateAdminUserSelect === 'function') {
+                await populateAdminUserSelect();
             }
 
             try {
