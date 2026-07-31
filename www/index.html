@@ -722,8 +722,9 @@
         }
         window.directPurgeAllCloudLegacyData = directPurgeAllCloudLegacyData;
 
-        // 🏃‍♂️ 0초 무적 클라우드 찌꺼기 소멸기 즉시 구동
-        directPurgeAllCloudLegacyData();
+        // 🏃‍♂️ [버그 방지 조치] 페이지 로드 시 등록된 전체 팀원 명단(예: 이민우, 박병주, 김진홍 등 3명 이상)이 
+        // 1명으로 강제 리셋되는 현상을 차단하기 위해 0초 자동 세척 구문을 안전하게 무력화(주석 처리)하였습니다.
+        // directPurgeAllCloudLegacyData();
 
         // 🧹 [구버전 26명 찌꺼기 명단 100% 완전 소멸 & 이민우 계정 1명 원상 복구 샌니타이저]
         function directResetAllLegacyUsersToFresh() {
