@@ -839,40 +839,50 @@
                 }
             }
 
-            // 1. 최고 관리자 제어판 [전체팀원 관리표] 등록 명단 100% 동적 집계 (localStorage & AppState 100% 최우선 실시간 병합)
+            // 1. 최고 관리자 제어판 [user_credentials] 실존 등록 팀원 명단 100% 직통 동적 집계 (Single Source of Truth)
             var uNameSet = {};
             try {
-                var localRoles = {};
-                try { localRoles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {}; } catch(e){}
-                var memRoles = AppState.userRoles || {};
-                
-                // 최신 로컬스토리지와 메모리 상태 병합
-                var mergedRoles = Object.assign({}, localRoles, memRoles);
-                AppState.userRoles = mergedRoles;
-
-                if (mergedRoles && typeof mergedRoles === 'object') {
-                    Object.keys(mergedRoles).forEach(function(n) {
-                        if (n && n.trim() && n.trim() !== '팀원' && n.trim() !== '강연주' && n.trim() !== 'undefined') {
-                            uNameSet[n.trim()] = true;
-                        }
-                    });
+                var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+                if (sb) {
+                    var res = await sb.from('user_credentials').select('*');
+                    if (res && res.data && res.data.length > 0) {
+                        res.data.forEach(function(row) {
+                            var rRole = row.role || 'editor';
+                            if (rRole === 'viewer') return; // 🚫 단순 뷰어 제외
+                            var uName = row.username || row.user_name || row.userName;
+                            if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주') {
+                                uNameSet[uName.trim()] = true;
+                            }
+                        });
+                    }
                 }
             } catch(e){}
 
-            if (AppState.currentUser && AppState.currentUser.fullName && AppState.currentUser.fullName.trim() !== '팀원') {
-                uNameSet[AppState.currentUser.fullName.trim()] = true;
+            // 만약 DB fetch 전이거나 비어있으면 현재 AppState.userRoles 에서 viewer 제외 수집
+            if (Object.keys(uNameSet).length === 0) {
+                var memRoles = AppState.userRoles || {};
+                Object.keys(memRoles).forEach(function(n) {
+                    if (memRoles[n] !== 'viewer' && n && n.trim() && n.trim() !== '팀원' && n.trim() !== '강연주') {
+                        uNameSet[n.trim()] = true;
+                    }
+                });
             }
-            
+
+            delete uNameSet['강연주'];
+            delete uNameSet['팀원'];
+            delete uNameSet['undefined'];
+
             var userNames = Object.keys(uNameSet);
-            if (userNames.length === 0) userNames = [actorName];
+            if (userNames.length === 0) userNames = ['이민우'];
             var totalUserCount = userNames.length;
 
             var todayRecords = records.filter(function(r) { return normalizeDateStr(r.workDate) === todayStr; });
             var uniqueWorkingMap = {};
             var workingRecords = [];
             todayRecords.forEach(function(r) {
-                if (r.status === 'WORKING' && !uniqueWorkingMap[r.userName]) {
-                    uniqueWorkingMap[r.userName] = true;
+                // 🛡️ 핵심 정밀 필터링: 오직 현재 Supabase Cloud DB(user_credentials)에 존재하는 실존 팀원의 도장만 세어준다!
+                if (r.userName && uNameSet[r.userName.trim()] && r.status === 'WORKING' && !uniqueWorkingMap[r.userName.trim()]) {
+                    uniqueWorkingMap[r.userName.trim()] = true;
                     workingRecords.push(r);
                 }
             });
