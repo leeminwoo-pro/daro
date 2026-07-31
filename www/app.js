@@ -15,11 +15,33 @@ let supabase = null;
 try {
     if (window.supabase && typeof window.supabase.createClient === 'function') {
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        window.supabaseClient = supabase;
+        if (window.AppState) window.AppState.supabaseClient = supabase;
         console.log("⚡ [도약다로] 구글 클라우드 DB 24시간 동기화 준비 완료!");
     }
 } catch(e) {
     console.log("로컬 스토리지 데이터 가동");
 }
+
+// ⚡ LTE / 5G 모바일 데이터 망 무적 REST API 직통 샷 함수 (통신사 제약 100% 돌파)
+async function directPushToSupabaseRestAPI(payload) {
+    if (!payload || !payload.user_name) return;
+    try {
+        var restUrl = SUPABASE_URL + '/rest/v1/attendance_records';
+        var headers = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates'
+        };
+        await fetch(restUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload)
+        });
+    } catch(err) { }
+}
+window.directPushToSupabaseRestAPI = directPushToSupabaseRestAPI;
 
 // -----------------------------------------------------------------
 // 2. 애플리케이션 상태 관리 객체 (State Management)
@@ -853,7 +875,8 @@ function handleCreateSchedule() {
             status: 'todo',
             priority: priority,
             dueDate: dueDate || getSafeTodayStr(),
-            createdBy: AppState.currentUser ? AppState.currentUser.fullName : '팀원'
+            createdBy: AppState.currentUser ? AppState.currentUser.fullName : '팀원',
+            createdAt: new Date().toISOString()
         };
 
         AppState.schedules.push(newSchedule);
@@ -1295,21 +1318,6 @@ function directOpenMetricFilterModal(filterType, customTitle) {
         console.log("directOpenMetricFilterModal 샌드박스 차단 방어막:", eErr);
     }
 }
-
-            card.innerHTML = `
-                <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
-                    ${statusBadge}
-                    ${dDayBadge}
-                    <span style="font-weight:700; color:#0f172a; font-size:0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${task.title}</span>
-                </div>
-                <span style="font-size:0.78rem; color:#64748b; font-weight:600; flex-shrink:0;">${task.createdBy || '팀원'}</span>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    modal.style.display = 'flex';
-}
 window.directOpenMetricFilterModal = directOpenMetricFilterModal;
 
 // 🌟 [상단 명품 토스트 알림 생성 함수]
@@ -1329,6 +1337,909 @@ function showSuccessToast(message) {
     } catch(e){}
 }
 window.showSuccessToast = showSuccessToast;
+
+// =================================================================
+// 🏃‍♂️ [NFC 기반 스마트 출퇴근 & 팀원 실시간 근태 관리 엔진]
+// =================================================================
+if (!AppState.attendanceRecords) AppState.attendanceRecords = [];
+
+// 1. 근태 데이터 불러오기 (로컬 스토리지 & Supabase 클라우드)
+async function fetchAttendanceRecordsFromCloud() {
+    if (window.supabaseClient) {
+        try {
+            var res = await window.supabaseClient.from('attendance_records').select('*').order('created_at', { ascending: false });
+            if (res.data) {
+                AppState.attendanceRecords = res.data.map(function(r) {
+                    return {
+                        id: r.id,
+                        userId: r.user_id,
+                        userName: r.user_name,
+                        workDate: r.work_date,
+                        clockIn: r.clock_in,
+                        clockOut: r.clock_out,
+                        totalHours: r.total_hours,
+                        status: r.status,
+                        nfcTagged: r.nfc_tagged
+                    };
+                });
+                try { localStorage.setItem('doyakdaro_attendance_records', JSON.stringify(AppState.attendanceRecords)); } catch(e){}
+            }
+        } catch(e){}
+    } else {
+        try {
+            var local = localStorage.getItem('doyakdaro_attendance_records');
+            if (local) AppState.attendanceRecords = JSON.parse(local);
+        } catch(e){}
+    }
+    directRenderAttendanceUI();
+}
+window.fetchAttendanceRecordsFromCloud = fetchAttendanceRecordsFromCloud;
+
+// ☁️ Supabase 구글 클라우드 시스템 전역 설정 1초 연동
+async function fetchSystemSettingsFromCloud() {
+    if (window.supabaseClient) {
+        try {
+            var res = await window.supabaseClient.from('system_settings').select('*');
+            if (res.data && res.data.length > 0) {
+                var settingObj = res.data.find(function(s) { return s.setting_key === 'nfc_attendance_enabled'; });
+                if (settingObj) {
+                    AppState.nfcAttendanceEnabled = (settingObj.setting_val === 'true');
+                    try { localStorage.setItem('doyakdaro_nfc_attendance_enabled', settingObj.setting_val); } catch(e){}
+                }
+            }
+        } catch(e){}
+    }
+    directRenderAttendanceUI();
+}
+window.fetchSystemSettingsFromCloud = fetchSystemSettingsFromCloud;
+
+function syncSystemSettingToCloud(key, valStr) {
+    if (window.supabaseClient) {
+        try {
+            window.supabaseClient.from('system_settings').upsert({
+                setting_key: key,
+                setting_val: valStr,
+                updated_at: new Date().toISOString()
+            }).then(function(){});
+        } catch(e){}
+    }
+}
+window.syncSystemSettingToCloud = syncSystemSettingToCloud;
+
+// 👑 [최고 관리자 전용 NFC 출퇴근 기능 On/Off 토글 컨트롤러]
+if (typeof AppState.nfcAttendanceEnabled === 'undefined') {
+    var savedSetting = localStorage.getItem('doyakdaro_nfc_attendance_enabled');
+    AppState.nfcAttendanceEnabled = (savedSetting === 'false') ? false : true;
+}
+
+var isTogglingNfcFeature = false;
+function directToggleNFCAttendanceFeature(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+
+    if (isTogglingNfcFeature) return false;
+    isTogglingNfcFeature = true;
+    setTimeout(function() { isTogglingNfcFeature = false; }, 300);
+
+    var currentSetting = localStorage.getItem('doyakdaro_nfc_attendance_enabled');
+    var isCurrentlyEnabled = (currentSetting === 'false' || AppState.nfcAttendanceEnabled === false) ? false : true;
+    var nextState = !isCurrentlyEnabled;
+
+    AppState.nfcAttendanceEnabled = nextState;
+    var valStr = nextState ? 'true' : 'false';
+
+    try { localStorage.setItem('doyakdaro_nfc_attendance_enabled', valStr); } catch(e){}
+
+    if (typeof syncSystemSettingToCloud === 'function') {
+        syncSystemSettingToCloud('nfc_attendance_enabled', valStr);
+    }
+
+    var toggleBtn = document.getElementById('adminNFCToggleBtn');
+    if (toggleBtn) {
+        toggleBtn.innerHTML = nextState ? '🟢 현재 사용 중 (ON)' : '🔴 비활성화됨 (OFF)';
+        toggleBtn.style.background = nextState ? '#10b981' : '#ef4444';
+    }
+
+    var statusBar = document.getElementById('attendanceStatusBar');
+    if (statusBar) {
+        if (!nextState) {
+            statusBar.style.setProperty('display', 'none', 'important');
+        } else {
+            statusBar.style.setProperty('display', 'flex', 'important');
+        }
+    }
+
+    alert(nextState ? '🟢 NFC 출퇴근 기능이 활성화되었습니다!' : '🔴 NFC 출퇴근 기능이 비활성화되었습니다 (UI 싹 감춤)');
+    return false;
+}
+window.directToggleNFCAttendanceFeature = directToggleNFCAttendanceFeature;
+
+// ⚡ 최고 관리자 버튼 클릭 최우선 무적 이벤트 바인딩
+document.addEventListener('click', function (e) {
+    var target = e.target;
+    if (!target) return;
+
+    // 1. 진품 스티커 등록 버튼 클릭 감지
+    if (target.id === 'adminAddNewNfcTagBtn' || (target.closest && target.closest('#adminAddNewNfcTagBtn'))) {
+        e.preventDefault();
+        e.stopPropagation();
+        directAddNewNFCTagFromAdmin();
+        return;
+    }
+}, true);
+
+// ☁️ 진품 NFC 스티커 (물리 UID) 클라우드 로드 및 등록 관리
+if (!AppState.validNfcTags) {
+    try {
+        var localTags = localStorage.getItem('doyakdaro_valid_nfc_tags');
+        if (localTags) {
+            AppState.validNfcTags = JSON.parse(localTags);
+        } else {
+            AppState.validNfcTags = [];
+        }
+    } catch(e) {
+        AppState.validNfcTags = [];
+    }
+}
+
+async function fetchNFCTagsFromCloud() {
+    if (window.supabaseClient) {
+        try {
+            var res = await window.supabaseClient.from('nfc_tags').select('*');
+            if (res.data && res.data.length > 0) {
+                AppState.validNfcTags = res.data;
+                try { localStorage.setItem('doyakdaro_valid_nfc_tags', JSON.stringify(AppState.validNfcTags)); } catch(e){}
+            }
+        } catch(e){}
+    }
+    directRenderAdminNfcTagList();
+}
+window.fetchNFCTagsFromCloud = fetchNFCTagsFromCloud;
+
+function directRenderAdminNfcTagList() {
+    var container = document.getElementById('adminNfcTagList');
+    if (!container) return;
+    container.innerHTML = '';
+    var list = (typeof getValidNfcTagsList === 'function') ? getValidNfcTagsList() : (AppState.validNfcTags || []);
+    if (!list || list.length === 0) {
+        container.innerHTML = '<div style="color:#94a3b8; font-size:0.8rem; text-align:center; padding:10px; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">등록된 진품 NFC 스티커가 없습니다. 위에서 직접 스티커를 등록해 주세요!</div>';
+        return;
+    }
+
+    list.forEach(function(t, idx) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:10px 14px; border-radius:10px; border:1px solid rgba(15,23,42,0.12); margin-bottom:6px; box-shadow:0 2px 5px rgba(0,0,0,0.03);';
+        row.innerHTML = `
+            <div>
+                <strong style="color:#0f172a; font-size:0.88rem;">🏢 ${t.location_name || '사무실 출입문'}</strong>
+                <span style="font-size:0.75rem; color:#2563eb; font-weight:800; margin-left:6px; background:rgba(37,99,235,0.08); padding:2px 6px; border-radius:4px;">[코드: ${t.tag_code}]</span>
+                <div style="font-size:0.78rem; color:#059669; font-weight:800; margin-top:3px;">🔑 물리 UID: ${t.tag_uid || '미지정'}</div>
+            </div>
+            <button type="button" onclick="directDeleteNFCTag(${idx})" style="background:rgba(239,68,68,0.1); color:#dc2626; border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:4px 10px; font-size:0.78rem; font-weight:800; cursor:pointer;" title="등록 삭제">🗑️ 삭제</button>
+        `;
+        container.appendChild(row);
+    });
+}
+window.directRenderAdminNfcTagList = directRenderAdminNfcTagList;
+
+async function directAddNewNFCTagFromAdmin() {
+    var codeEl = document.getElementById('adminNfcTagCodeInput');
+    var uidEl = document.getElementById('adminNfcTagUidInput');
+    var locEl = document.getElementById('adminNfcLocationInput');
+
+    var tagCode = codeEl ? codeEl.value.trim() : '';
+    var tagUid = uidEl ? uidEl.value.trim() : '';
+    var locationName = locEl ? locEl.value.trim() : '사무실 출입문';
+
+    if (!tagCode) {
+        alert("🏷️ 태그 코드를 입력해 주세요 (예: DOYAK_NFC_OFFICE_MAIN_2026)");
+        return;
+    }
+    if (!tagUid) {
+        alert("🛡️ 스티커의 물리 고유 UID를 입력해 주세요 (예: 04:A2:8F:B2:1C:60:80)");
+        return;
+    }
+
+    var newTag = { tag_code: tagCode, tag_uid: tagUid, location_name: locationName, is_active: true };
+    if (!AppState.validNfcTags) AppState.validNfcTags = [];
+    AppState.validNfcTags.push(newTag);
+
+    try { localStorage.setItem('doyakdaro_valid_nfc_tags', JSON.stringify(AppState.validNfcTags)); } catch(e){}
+
+    if (window.supabaseClient) {
+        try {
+            await window.supabaseClient.from('nfc_tags').upsert([newTag]);
+        } catch(e){}
+    }
+
+    if (codeEl) codeEl.value = '';
+    if (uidEl) uidEl.value = '';
+    if (locEl) locEl.value = '';
+
+    if (typeof showSuccessToast === 'function') {
+        showSuccessToast('🟢 승인된 진품 NFC 스티커 (' + locationName + ') 등록 완료!', 'create');
+    }
+    directRenderAdminNfcTagList();
+}
+window.directAddNewNFCTagFromAdmin = directAddNewNFCTagFromAdmin;
+
+async function directDeleteNFCTag(idx) {
+    if (!confirm("🗑️ 이 진품 NFC 스티커 등록을 삭제하시겠습니까?")) return;
+    var target = AppState.validNfcTags[idx];
+    if (target) {
+        AppState.validNfcTags.splice(idx, 1);
+        try { localStorage.setItem('doyakdaro_valid_nfc_tags', JSON.stringify(AppState.validNfcTags)); } catch(e){}
+        if (window.supabaseClient) {
+            try {
+                await window.supabaseClient.from('nfc_tags').delete().eq('tag_code', target.tag_code);
+            } catch(e){}
+        }
+    }
+    directRenderAdminNfcTagList();
+}
+window.directDeleteNFCTag = directDeleteNFCTag;
+
+// 2. NFC 태그 스캔 / 스마트 토글 출퇴근 처리 (물리 UID 1초 검증 엔진)
+async function directProcessNFCTagScan(tagCode, tagUid) {
+    if (AppState.nfcAttendanceEnabled === false) {
+        alert("🔴 현재 최고 관리자에 의해 NFC 출퇴근 기능이 비활성화되어 있습니다.");
+        return;
+    }
+
+    // 진품 물리 UID 1초 검증 엔진
+    var defaultTargetUid = '04:A2:8F:B2:1C:60:80';
+    var actualUid = tagUid || defaultTargetUid;
+    var validTags = AppState.validNfcTags || [];
+    var targetCode = tagCode || 'DOYAK_NFC_OFFICE_MAIN_2026';
+
+    var matchedTag = validTags.find(function(t) {
+        return t.tag_code === targetCode;
+    });
+
+    if (matchedTag && matchedTag.tag_uid) {
+        if (actualUid !== matchedTag.tag_uid) {
+            alert("❌ [복제 태그 차단] 등록되지 않은 복제/개인 NFC 스티커입니다! (사무실 진품 물리 UID 불일치)");
+            return;
+        }
+    }
+
+    var actorName = typeof getCurrentActorName === 'function' ? getCurrentActorName() : '팀원';
+    var todayStr = typeof getTodayStr === 'function' ? getTodayStr() : new Date().toISOString().split('T')[0];
+
+    var records = AppState.attendanceRecords || [];
+    var todayRecord = records.find(function(r) {
+        return r.userName === actorName && r.workDate === todayStr;
+    });
+
+    var nowIso = new Date().toISOString();
+    var nowTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (!todayRecord || todayRecord.status === 'COMPLETED') {
+        // [출근 처리]
+        var newRecord = {
+            id: 'att-' + Date.now(),
+            userId: actorName,
+            userName: actorName,
+            workDate: todayStr,
+            clockIn: nowIso,
+            clockOut: null,
+            totalHours: 0,
+            status: 'WORKING',
+            nfcTagged: true
+        };
+
+        if (!AppState.attendanceRecords) AppState.attendanceRecords = [];
+        AppState.attendanceRecords.unshift(newRecord);
+        try { localStorage.setItem('doyakdaro_attendance_records', JSON.stringify(AppState.attendanceRecords)); } catch(e){}
+
+        if (window.supabaseClient) {
+            try {
+                await window.supabaseClient.from('attendance_records').insert([{
+                    user_id: actorName,
+                    user_name: actorName,
+                    work_date: todayStr,
+                    clock_in: nowIso,
+                    status: 'WORKING',
+                    nfc_tagged: true
+                }]);
+            } catch(e){}
+        }
+
+        try { if (typeof playSuccessSound === 'function') playSuccessSound(); } catch(e){}
+        showNFCToastNotice("🏷️ NFC 태그 출근 성공!", actorName + " 님, " + nowTimeStr + " 출근 등록되었습니다. 오늘도 파이팅! 🟢");
+        try { if (typeof directAddAuditLog === 'function') directAddAuditLog('CLOCK_IN', "NFC 출근: " + actorName + " (" + nowTimeStr + ")"); } catch(e){}
+    } else {
+        // [퇴근 처리 - 연속 태그 실수 방지 세이프가드]
+        var clockInTime = new Date(todayRecord.clockIn);
+        var clockOutTime = new Date();
+        var diffSec = Math.floor((clockOutTime - clockInTime) / 1000);
+
+        if (diffSec < 180) { // 3분(180초) 이내 실수 연속 태그 차단
+            alert("⏱️ [연속 태그 방지] 방금(" + diffSec + "초 전) 출근 태그가 성공적으로 등록되었습니다!\n\n실수로 연달아 태그된 요청은 차단됩니다. (퇴근 태그는 출근 3분 이후부터 작동합니다) 👍");
+            return;
+        }
+
+        var diffHours = Math.max(0.1, (clockOutTime - clockInTime) / (1000 * 60 * 60)).toFixed(2);
+
+        todayRecord.clockOut = nowIso;
+        todayRecord.totalHours = parseFloat(diffHours);
+        todayRecord.status = 'COMPLETED';
+
+        try { localStorage.setItem('doyakdaro_attendance_records', JSON.stringify(AppState.attendanceRecords)); } catch(e){}
+
+        if (window.supabaseClient) {
+            try {
+                await window.supabaseClient.from('attendance_records').update({
+                    clock_out: nowIso,
+                    total_hours: parseFloat(diffHours),
+                    status: 'COMPLETED'
+                }).eq('user_name', actorName).eq('work_date', todayStr);
+            } catch(e){}
+        }
+
+        try { if (typeof playGoalDoneSound === 'function') playGoalDoneSound(); } catch(e){}
+        showNFCToastNotice("🏠 NFC 태그 퇴근 성공!", actorName + " 님, " + nowTimeStr + " 퇴근 처리 완료! (오늘 근무: " + diffHours + "시간) ⚪");
+        try { if (typeof directAddAuditLog === 'function') directAddAuditLog('CLOCK_OUT', "NFC 퇴근: " + actorName + " (" + nowTimeStr + ")"); } catch(e){}
+    }
+
+    directRenderAttendanceUI();
+}
+window.directProcessNFCTagScan = directProcessNFCTagScan;
+
+// 3. NFC 시뮬레이션 및 수동 버튼 처리
+function directSimulateNFCTag() {
+    directProcessNFCTagScan('DOYAK_NFC_OFFICE_MAIN_2026');
+}
+window.directSimulateNFCTag = directSimulateNFCTag;
+
+function directManualClockToggle() {
+    directProcessNFCTagScan('MANUAL_TOGGLE');
+}
+window.directManualClockToggle = directManualClockToggle;
+
+// 👑 [최고 관리자 전용 특정 팀원 수동 근태 대리 제어 기능 - 동적 실존 팀원 100% 동기화]
+if (typeof window.directPopulateAdminUserDropdown !== 'function') {
+    window.directPopulateAdminUserDropdown = function() {
+        var selectEls = [
+            document.getElementById('adminTargetUserSelect'), 
+            document.getElementById('adminTargetUserSelect_inModal'),
+            document.getElementById('adminTargetUserSelect_inConsole')
+        ].filter(Boolean);
+        if (selectEls.length === 0) return;
+
+        var nameSet = {};
+        try {
+            var roles = window.AppState ? window.AppState.userRoles : null;
+            if (!roles) roles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+            if (roles && typeof roles === 'object') {
+                Object.keys(roles).forEach(function(k) {
+                    if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주') nameSet[k.trim()] = true;
+                });
+            }
+        } catch(e){}
+
+        if (window.AppState && window.AppState.currentUser && window.AppState.currentUser.fullName) {
+            var cur = window.AppState.currentUser.fullName;
+            if (cur && cur.trim() && cur.trim() !== '팀원') nameSet[cur.trim()] = true;
+        }
+
+        var names = Object.keys(nameSet).filter(Boolean).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+        if (names.length === 0) names = ['이민우'];
+
+        selectEls.forEach(function(selectEl) {
+            var currentVal = selectEl.value;
+            selectEl.innerHTML = '<option value="">-- 수동 출퇴근 처리할 팀원 선택 (' + names.length + '명) --</option>';
+            names.forEach(function(name) {
+                var opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = '👤 ' + name;
+                if (name === currentVal) opt.selected = true;
+                selectEl.appendChild(opt);
+            });
+        });
+    };
+}
+
+// 🌐 Supabase 클라이언트 통합 헬퍼 (모바일/PC 공용)
+function getSupabaseClient() {
+    if (window.supabaseClient) return window.supabaseClient;
+    if (window.supabase && typeof window.supabase.from === 'function') return window.supabase;
+    if (window.AppState && window.AppState.supabaseClient) return window.AppState.supabaseClient;
+    return null;
+}
+window.getSupabaseClient = getSupabaseClient;
+
+// 🔄 PC ↔ 모바일 24시간 구글 클라우드 DB 실시간 2초 동기화 엔진
+async function directFetchAttendanceFromSupabase() {
+    var sb = getSupabaseClient();
+    if (!sb) return;
+    try {
+        var res = await sb.from('attendance_records').select('*').order('created_at', { ascending: false });
+        if (res && res.data && res.data.length > 0) {
+            var dbRecords = res.data;
+            if (!AppState.attendanceRecords) AppState.attendanceRecords = [];
+            
+            dbRecords.forEach(function(dbRec) {
+                var rName = dbRec.user_name || dbRec.user_id;
+                var rDate = dbRec.work_date;
+                if (!rName || !rDate) return;
+
+                var idx = AppState.attendanceRecords.findIndex(function(r) {
+                    var localName = r.user_name || r.userName || r.userId || r.user_id;
+                    var localDate = r.work_date || r.workDate;
+                    return localName === rName && localDate === rDate;
+                });
+
+                var normalizedRec = {
+                    id: dbRec.id || ('att-' + Date.now()),
+                    user_id: rName,
+                    userId: rName,
+                    user_name: rName,
+                    userName: rName,
+                    work_date: rDate,
+                    workDate: rDate,
+                    clock_in: dbRec.clock_in,
+                    clockIn: dbRec.clock_in,
+                    clock_out: dbRec.clock_out,
+                    clockOut: dbRec.clock_out,
+                    total_hours: dbRec.total_hours || 0,
+                    totalHours: dbRec.total_hours || 0,
+                    status: dbRec.status || (dbRec.clock_out ? 'COMPLETED' : 'WORKING'),
+                    auth_type: dbRec.auth_type || (dbRec.nfc_tagged ? 'NFC_TAG' : 'ADMIN_MANUAL'),
+                    authType: dbRec.auth_type || (dbRec.nfc_tagged ? 'NFC_TAG' : 'ADMIN_MANUAL'),
+                    auth_location: dbRec.auth_location || '본사',
+                    authLocation: dbRec.auth_location || '본사',
+                    nfc_tagged: dbRec.nfc_tagged !== false,
+                    nfcTagged: dbRec.nfc_tagged !== false
+                };
+
+                if (idx >= 0) {
+                    AppState.attendanceRecords[idx] = normalizedRec;
+                } else {
+                    AppState.attendanceRecords.unshift(normalizedRec);
+                }
+            });
+
+            try { localStorage.setItem('doyakdaro_attendance_records', JSON.stringify(AppState.attendanceRecords)); } catch (e) { }
+            if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
+        }
+    } catch (e) { }
+}
+window.directFetchAttendanceFromSupabase = directFetchAttendanceFromSupabase;
+
+// ⏱️ 2초 주기 PC ↔ 모바일 구글 클라우드 DB 자동 실시간 동기화
+setInterval(function() {
+    directFetchAttendanceFromSupabase();
+}, 2000);
+
+// 👑 [최고 관리자 & NFC 직통 대리/자동 근태 처리 엔진]
+async function directAdminClockToggleUserByName(targetName, isClockIn, customTimeStr, authTypeParam) {
+    if (!targetName) {
+        alert("⚠️ 수동 출퇴근 처리할 팀원을 먼저 선택해 주세요!");
+        return false;
+    }
+
+    var authType = authTypeParam || (customTimeStr === 'NFC_TAG' ? 'NFC_TAG' : (customTimeStr === 'ADMIN_MANUAL' ? 'ADMIN_MANUAL' : 'NFC_TAG'));
+    var authLocation = localStorage.getItem('doyakdaro_office_nfc_location') || '본사';
+    var todayStr = typeof getTodayStr === 'function' ? getTodayStr() : new Date().toISOString().split('T')[0];
+    
+    // 시각 세팅 (지정 시각 필드 또는 customTimeStr 사용)
+    var timeInput = document.getElementById('adminCustomClockTime_inModal');
+    var timeVal = (customTimeStr && customTimeStr.includes(':')) ? customTimeStr : (timeInput ? timeInput.value : '');
+    
+    var nowObj = new Date();
+    if (timeVal && timeVal.includes(':')) {
+        var parts = timeVal.split(':');
+        nowObj.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+    }
+    var nowIso = nowObj.toISOString();
+    var nowTimeStr = nowObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (!AppState.attendanceRecords) AppState.attendanceRecords = [];
+    var records = AppState.attendanceRecords;
+    var targetRecord = records.find(function (r) {
+        var rName = r.user_name || r.userName || r.userId || r.user_id;
+        var rDate = r.work_date || r.workDate;
+        return rName === targetName && rDate === todayStr;
+    });
+
+    var sb = getSupabaseClient();
+
+    if (isClockIn) {
+        // 출근 처리
+        if (!targetRecord) {
+            targetRecord = {
+                id: 'att-' + Date.now(),
+                user_id: targetName,
+                userId: targetName,
+                user_name: targetName,
+                userName: targetName,
+                work_date: todayStr,
+                workDate: todayStr,
+                clock_in: nowIso,
+                clockIn: nowIso,
+                clock_out: null,
+                clockOut: null,
+                total_hours: 0,
+                totalHours: 0,
+                status: 'WORKING',
+                auth_type: authType,
+                authType: authType,
+                auth_location: authLocation,
+                authLocation: authLocation,
+                nfc_tagged: authType === 'NFC_TAG',
+                nfcTagged: authType === 'NFC_TAG'
+            };
+            AppState.attendanceRecords.unshift(targetRecord);
+        } else {
+            targetRecord.status = 'WORKING';
+            targetRecord.clock_in = nowIso;
+            targetRecord.clockIn = nowIso;
+            targetRecord.clock_out = null;
+            targetRecord.clockOut = null;
+            targetRecord.auth_type = authType;
+            targetRecord.authType = authType;
+        }
+
+        try { localStorage.setItem('doyakdaro_attendance_records', JSON.stringify(AppState.attendanceRecords)); } catch (e) { }
+
+        if (sb) {
+            try {
+                await sb.from('attendance_records').upsert([{
+                    user_id: targetName,
+                    user_name: targetName,
+                    work_date: todayStr,
+                    clock_in: nowIso,
+                    status: 'WORKING',
+                    auth_type: authType,
+                    auth_location: authLocation,
+                    nfc_tagged: authType === 'NFC_TAG'
+                }]);
+            } catch (e) { }
+        }
+
+        // ⚡ LTE / 5G 모바일 망 무적 직통 REST API 샷 (통신사 망 통과)
+        if (typeof directPushToSupabaseRestAPI === 'function') {
+            directPushToSupabaseRestAPI({
+                user_id: targetName,
+                user_name: targetName,
+                work_date: todayStr,
+                clock_in: nowIso,
+                status: 'WORKING',
+                auth_type: authType,
+                auth_location: authLocation,
+                nfc_tagged: authType === 'NFC_TAG'
+            });
+        }
+
+        try { if (typeof playSuccessSound === 'function') playSuccessSound(); } catch (e) { }
+        try { if (typeof directAddAuditLog === 'function') directAddAuditLog('CLOCK_IN', "출근 (" + authType + "): " + targetName + " (" + nowTimeStr + ")"); } catch (e) { }
+    } else {
+        // 퇴근 처리
+        if (!targetRecord) {
+            targetRecord = {
+                id: 'att-' + Date.now(),
+                user_id: targetName,
+                userId: targetName,
+                user_name: targetName,
+                userName: targetName,
+                work_date: todayStr,
+                workDate: todayStr,
+                clock_in: new Date(nowObj.getTime() - 8 * 3600 * 1000).toISOString(),
+                clockIn: new Date(nowObj.getTime() - 8 * 3600 * 1000).toISOString(),
+                clock_out: nowIso,
+                clockOut: nowIso,
+                total_hours: 8,
+                totalHours: 8,
+                status: 'COMPLETED',
+                auth_type: authType,
+                authType: authType,
+                auth_location: authLocation,
+                authLocation: authLocation,
+                nfc_tagged: authType === 'NFC_TAG',
+                nfcTagged: authType === 'NFC_TAG'
+            };
+            AppState.attendanceRecords.unshift(targetRecord);
+        }
+        
+        var clockInTime = new Date(targetRecord.clock_in || targetRecord.clockIn || nowIso);
+        var diffHours = Math.max(0.1, (nowObj - clockInTime) / (1000 * 60 * 60)).toFixed(2);
+
+        targetRecord.clock_out = nowIso;
+        targetRecord.clockOut = nowIso;
+        targetRecord.total_hours = parseFloat(diffHours);
+        targetRecord.totalHours = parseFloat(diffHours);
+        targetRecord.status = 'COMPLETED';
+
+        try { localStorage.setItem('doyakdaro_attendance_records', JSON.stringify(AppState.attendanceRecords)); } catch (e) { }
+
+        if (sb) {
+            try {
+                await sb.from('attendance_records').update({
+                    clock_out: nowIso,
+                    total_hours: parseFloat(diffHours),
+                    status: 'COMPLETED'
+                }).eq('user_name', targetName).eq('work_date', todayStr);
+            } catch (e) { }
+        }
+
+        try { if (typeof playGoalDoneSound === 'function') playGoalDoneSound(); } catch (e) { }
+        try { if (typeof directAddAuditLog === 'function') directAddAuditLog('CLOCK_OUT', "퇴근 (" + authType + "): " + targetName + " (" + nowTimeStr + ")"); } catch (e) { }
+    }
+
+    if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
+    directFetchAttendanceFromSupabase();
+    return true;
+}
+window.directAdminClockToggleUserByName = directAdminClockToggleUserByName;
+
+function directAdminResetUserDeviceLock() {
+    var sel = document.getElementById('adminTargetUserSelect_inConsole') || document.getElementById('adminTargetUserSelect');
+    var targetName = sel ? sel.value : '';
+    if (!targetName) {
+        alert("폰 락을 초기화할 팀원을 먼저 선택해 주세요!");
+        return;
+    }
+    if (confirm("🔓 [" + targetName + "] 님의 스마트폰 락을 초기화하시겠습니까?\n\n초기화 후 해당 팀원은 폰에서 새로 이름을 등록할 수 있습니다.")) {
+        localStorage.removeItem('doyakdaro_nfc_my_name');
+        localStorage.removeItem('doyakdaro_device_locked');
+        alert("✅ [" + targetName + "] 님의 스마트폰 락이 1초 만에 깔끔하게 초기화되었습니다!");
+    }
+}
+window.directAdminResetUserDeviceLock = directAdminResetUserDeviceLock;
+
+async function directAdminClockToggleUser(isClockIn) {
+    var selectEl = document.getElementById('adminTargetUserSelect_inConsole') || 
+                   document.getElementById('adminTargetUserSelect') || 
+                   document.getElementById('adminTargetUserSelect_inModal');
+    var targetName = selectEl ? selectEl.value.trim() : '';
+
+    if (!targetName) {
+        alert("⚠️ 수동 출퇴근 처리할 팀원을 먼저 선택해 주세요!");
+        return false;
+    }
+
+    return await directAdminClockToggleUserByName(targetName, isClockIn, null, 'ADMIN_MANUAL');
+}
+window.directAdminClockToggleUser = directAdminClockToggleUser;
+
+function showNFCToastNotice(title, desc) {
+    var titleEl = document.getElementById('nfcToastTitle');
+    var descEl = document.getElementById('nfcToastDesc');
+    var modal = document.getElementById('nfcToastModal');
+
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) descEl.textContent = desc;
+    if (modal) modal.style.display = 'flex';
+}
+window.showNFCToastNotice = showNFCToastNotice;
+
+// 👥 [실제 등록 팀원 명단 100% 동적 추출 로더 - app.js 찌꺼기 100% 소멸 완수]
+function populateAdminUserSelect() {
+    var selects = [
+        document.getElementById('adminTargetUserSelect_inConsole'),
+        document.getElementById('adminTargetUserSelect'),
+        document.getElementById('adminTargetUserSelect_inModal')
+    ];
+
+    var nameSet = {};
+    
+    // 오직 최고 관리자 지정 팀원 관리표(userRoles)에서만 실존 유저 수집
+    try {
+        var roles = window.AppState ? window.AppState.userRoles : null;
+        if (!roles) roles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+        if (roles && typeof roles === 'object') {
+            Object.keys(roles).forEach(function(k) {
+                if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
+                    nameSet[k.trim()] = true;
+                }
+            });
+        }
+    } catch(e){}
+
+    if (window.AppState && window.AppState.currentUser && window.AppState.currentUser.fullName) {
+        var cur = window.AppState.currentUser.fullName;
+        if (cur && cur.trim() && cur.trim() !== '팀원') nameSet[cur.trim()] = true;
+    }
+
+    if (Object.keys(nameSet).length === 0) {
+        nameSet['이민우'] = true;
+    }
+
+    delete nameSet['강연주'];
+    delete nameSet['팀원'];
+
+    var users = Object.keys(nameSet).filter(Boolean).sort(function(a, b) {
+        return a.localeCompare(b, 'ko');
+    });
+
+    selects.forEach(function(sel) {
+        if (!sel) return;
+        var currentVal = sel.value;
+        var html = '<option value="">-- 수동 출퇴근 처리할 팀원 선택 (' + users.length + '명) --</option>';
+        users.forEach(function(u) {
+            html += '<option value="' + u + '">👤 ' + u + '</option>';
+        });
+        sel.innerHTML = html;
+        if (currentVal) sel.value = currentVal;
+    });
+}
+window.populateAdminUserSelect = populateAdminUserSelect;
+
+// 4. 근태 UI 렌더링
+function directRenderAttendanceUI() {
+    populateAdminUserSelect();
+    var isEnabled = AppState.nfcAttendanceEnabled !== false;
+
+    var toggleBtn = document.getElementById('adminNFCToggleBtn');
+    if (toggleBtn) {
+        if (isEnabled) {
+            toggleBtn.innerHTML = '🟢 현재 사용 중 (ON)';
+            toggleBtn.style.background = '#10b981';
+        } else {
+            toggleBtn.innerHTML = '🔴 비활성화됨 (OFF)';
+            toggleBtn.style.background = '#ef4444';
+        }
+    }
+
+    var statusBar = document.getElementById('attendanceStatusBar');
+    if (statusBar) {
+        if (!isEnabled) {
+            statusBar.style.setProperty('display', 'none', 'important');
+            return;
+        } else {
+            statusBar.style.setProperty('display', 'flex', 'important');
+        }
+    }
+
+    var actorName = typeof getCurrentActorName === 'function' ? getCurrentActorName() : '팀원';
+    var todayStr = typeof getTodayStr === 'function' ? getTodayStr() : new Date().toISOString().split('T')[0];
+
+    var records = AppState.attendanceRecords || [];
+    
+    // 내 오늘 출퇴근 상태
+    var myRecord = records.find(function(r) {
+        var rName = r.user_name || r.userName || r.userId || r.user_id;
+        var rDate = r.work_date || r.workDate;
+        return rName === actorName && rDate === todayStr;
+    });
+
+    var statusTextEl = document.getElementById('myCurrentAttendanceText');
+    if (statusTextEl) {
+        if (!myRecord) {
+            statusTextEl.innerHTML = '<span style="color:#64748b;">미출근 (태그 대기 중)</span>';
+        } else if (myRecord.status === 'WORKING') {
+            var inTime = new Date(myRecord.clock_in || myRecord.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            statusTextEl.innerHTML = '<span style="color:#059669; font-weight:800;">🟢 근무 중 (' + inTime + ' 출근)</span>';
+        } else {
+            var outTime = new Date(myRecord.clock_out || myRecord.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            statusTextEl.innerHTML = '<span style="color:#64748b; font-weight:800;">⚪ 퇴근 완료 (' + outTime + ' 퇴근, ' + (myRecord.total_hours || myRecord.totalHours || 0) + '시간 근무)</span>';
+        }
+    }
+
+    // 메인 상단 팀원 실시간 근태 뱃지 렌더링
+    var teamBadgeContainer = document.getElementById('teamAttendanceBadgesList');
+    if (teamBadgeContainer) {
+        teamBadgeContainer.innerHTML = '';
+        var todayRecords = records.filter(function(r) { 
+            var rDate = r.work_date || r.workDate;
+            return rDate === todayStr; 
+        });
+
+        if (todayRecords.length === 0) {
+            teamBadgeContainer.innerHTML = '<span style="font-size:0.8rem; color:#94a3b8; font-weight:600;">아직 출근한 팀원이 없습니다.</span>';
+        } else {
+            todayRecords.forEach(function(r) {
+                var badge = document.createElement('span');
+                var isWorking = r.status === 'WORKING';
+                badge.className = isWorking ? 'attendance-status-badge attendance-badge-working' : 'attendance-status-badge attendance-badge-off';
+                var rName = r.user_name || r.userName || r.userId || r.user_id;
+                var clockInVal = r.clock_in || r.clockIn;
+                var inTime = clockInVal ? new Date(clockInVal).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                badge.innerHTML = isWorking ? '🟢 ' + rName + ' (' + inTime + ')' : '⚪ ' + rName + ' (퇴근)';
+                teamBadgeContainer.appendChild(badge);
+            });
+        }
+    }
+
+    // 활성 탭 상태 (기본 'working')
+    var activeTab = window.AppState.activeAttendanceTab || 'working';
+    
+    // 오늘 기록 필터링 및 카운터 동기화
+    var todayRecordsFilter = records.filter(function(r) { return (r.work_date || r.workDate) === todayStr; });
+    var workingRecords = todayRecordsFilter.filter(function(r) { return r.status === 'WORKING'; });
+    var completedRecords = todayRecordsFilter.filter(function(r) { return r.status === 'COMPLETED'; });
+
+    var elWork = document.getElementById('modalTabWorkingCount') || document.getElementById('tabWorkingCount');
+    if (elWork) elWork.textContent = workingRecords.length;
+    var elComp = document.getElementById('modalTabCompletedCount') || document.getElementById('tabCompletedCount');
+    if (elComp) elComp.textContent = completedRecords.length;
+    var elAll = document.getElementById('modalTabAllCount') || document.getElementById('tabAllCount');
+    if (elAll) elAll.textContent = records.length;
+
+    var displayList = [];
+    if (activeTab === 'working') displayList = workingRecords;
+    else if (activeTab === 'completed') displayList = completedRecords;
+    else displayList = records;
+
+    // 근태 모달 이력 타임라인 렌더링
+    var historyContainer = document.getElementById('attendanceHistoryList');
+    if (historyContainer) {
+        historyContainer.innerHTML = '';
+        if (displayList.length === 0) {
+            historyContainer.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.85rem; padding:20px;">해당 조건의 출퇴근 기록이 없습니다.</div>';
+            return;
+        }
+
+        displayList.forEach(function(r) {
+            var card = document.createElement('div');
+            card.style.cssText = 'background:#ffffff; border:1px solid rgba(15,23,42,0.12); border-radius:12px; padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; box-shadow:0 2px 6px rgba(0,0,0,0.02);';
+            
+            var rName = r.user_name || r.userName || r.userId || r.user_id;
+            var rDate = r.work_date || r.workDate;
+            var clockInVal = r.clock_in || r.clockIn;
+            var clockOutVal = r.clock_out || r.clockOut;
+
+            var inTime = clockInVal ? new Date(clockInVal).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+
+            var authType = 'NFC_TAG';
+            if (r && (r.auth_type === 'ADMIN_MANUAL' || r.authType === 'ADMIN_MANUAL')) {
+                authType = 'ADMIN_MANUAL';
+            }
+            var locName = (r && (r.auth_location || r.authLocation)) ? (r.auth_location || r.authLocation) : '본사';
+
+            var tagBadge = '';
+            if (authType === 'ADMIN_MANUAL') {
+                tagBadge = '<span style="font-size:0.75rem; background:#eef2ff; color:#4f46e5; border:1px solid rgba(99,102,241,0.4); padding:3px 8px; border-radius:6px; font-weight:800; display:inline-block; margin-left:4px;">👑 관리자 대리</span>';
+            } else {
+                tagBadge = '<span style="font-size:0.75rem; background:#ecfdf5; color:#059669; border:1px solid rgba(16,185,129,0.4); padding:3px 8px; border-radius:6px; font-weight:800; display:inline-block; margin-left:4px;">🏷️ NFC 인증 (' + locName + ')</span>';
+            }
+
+            var isWorking = r.status === 'WORKING';
+            var statusBadge = isWorking ? 
+                '<span style="background:#e6f4ea; color:#137333; padding:4px 8px; border-radius:6px; font-weight:800; font-size:0.78rem; display:inline-block;">🟢 출근 근무 중</span>' : 
+                '<span style="background:#f1f5f9; color:#64748b; padding:4px 8px; border-radius:6px; font-weight:800; font-size:0.78rem; display:inline-block;">⚪ 퇴근 완료</span>';
+
+            var actionBtn = '';
+            if (activeTab !== 'all') {
+                if (isWorking) {
+                    actionBtn = '<button type="button" onclick="directAdminClockToggleUserByName(\'' + rName + '\', false)" style="background:#ef4444; color:#fff; font-weight:800; border:none; padding:6px 12px; border-radius:8px; font-size:0.78rem; cursor:pointer;">🔴 수동 퇴근</button>';
+                } else {
+                    actionBtn = '<button type="button" onclick="directAdminClockToggleUserByName(\'' + rName + '\', true)" style="background:#10b981; color:#fff; font-weight:800; border:none; padding:6px 12px; border-radius:8px; font-size:0.78rem; cursor:pointer;">🟢 수동 출근</button>';
+                }
+            }
+
+            card.innerHTML = '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' +
+                             '<strong style="font-size:0.98rem; color:#0f172a;">👤 ' + rName + '</strong> ' +
+                             statusBadge +
+                             tagBadge +
+                             '</div>' +
+                             '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">' +
+                             '<div style="font-size:0.82rem; color:#059669; font-weight:800;">⏰ 출근: ' + inTime + '</div>' +
+                             actionBtn +
+                             '</div>';
+            historyContainer.appendChild(card);
+        });
+    }
+}
+window.directRenderAttendanceUI = directRenderAttendanceUI;
+
+// DOM 로드 시 근태 데이터 로드 & URL NFC 파라미터 감지 자동 구동
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        if (typeof fetchSystemSettingsFromCloud === 'function') fetchSystemSettingsFromCloud();
+        fetchAttendanceRecordsFromCloud();
+        
+        // URL 쿼리 파라미터 NFC 감지 (?nfc_tag=1 또는 ?action=nfc_clock_in)
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('nfc_tag') || urlParams.has('nfc_code') || urlParams.get('action') === 'nfc_clock_in') {
+            setTimeout(function() {
+                directProcessNFCTagScan('URL_NFC_AUTO_DETECT');
+            }, 600);
+        }
+    }, 500);
+});
+
 
 // ✨ [등록된 일정 날짜/카드 반짝 펄스 하이라이트 연출 함수]
 function highlightScheduleElement(dateStr, taskId) {

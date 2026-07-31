@@ -1697,7 +1697,7 @@ function directManualClockToggle() {
 }
 window.directManualClockToggle = directManualClockToggle;
 
-// 👑 [최고 관리자 전용 특정 팀원 수동 근태 대리 제어 기능 - index.html 최신 엔진 연동]
+// 👑 [최고 관리자 전용 특정 팀원 수동 근태 대리 제어 기능 - 동적 실존 팀원 100% 동기화]
 if (typeof window.directPopulateAdminUserDropdown !== 'function') {
     window.directPopulateAdminUserDropdown = function() {
         var selectEls = [
@@ -1706,7 +1706,26 @@ if (typeof window.directPopulateAdminUserDropdown !== 'function') {
             document.getElementById('adminTargetUserSelect_inConsole')
         ].filter(Boolean);
         if (selectEls.length === 0) return;
-        var names = ['장보고', '허영주', '허병준', '윤정숙', '연정민', '심채연', '김일섭', '박민석', '전세계', '이민우', '김진홍', '박병주'];
+
+        var nameSet = {};
+        try {
+            var roles = window.AppState ? window.AppState.userRoles : null;
+            if (!roles) roles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+            if (roles && typeof roles === 'object') {
+                Object.keys(roles).forEach(function(k) {
+                    if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주') nameSet[k.trim()] = true;
+                });
+            }
+        } catch(e){}
+
+        if (window.AppState && window.AppState.currentUser && window.AppState.currentUser.fullName) {
+            var cur = window.AppState.currentUser.fullName;
+            if (cur && cur.trim() && cur.trim() !== '팀원') nameSet[cur.trim()] = true;
+        }
+
+        var names = Object.keys(nameSet).filter(Boolean).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+        if (names.length === 0) names = ['이민우'];
+
         selectEls.forEach(function(selectEl) {
             var currentVal = selectEl.value;
             selectEl.innerHTML = '<option value="">-- 수동 출퇴근 처리할 팀원 선택 (' + names.length + '명) --</option>';
@@ -1995,7 +2014,7 @@ function showNFCToastNotice(title, desc) {
 }
 window.showNFCToastNotice = showNFCToastNotice;
 
-// 👥 [실제 등록 팀원 명단 100% 동적 추출 로더]
+// 👥 [실제 등록 팀원 명단 100% 동적 추출 로더 - app.js 찌꺼기 100% 소멸 완수]
 function populateAdminUserSelect() {
     var selects = [
         document.getElementById('adminTargetUserSelect_inConsole'),
@@ -2005,47 +2024,41 @@ function populateAdminUserSelect() {
 
     var nameSet = {};
     
-    // 1. AppState.attendanceRecords 에서 팀원 이름 추출
-    if (window.AppState && Array.isArray(window.AppState.attendanceRecords)) {
-        window.AppState.attendanceRecords.forEach(function(r) {
-            var n = r.user_name || r.userName || r.userId || r.user_id;
-            if (n && typeof n === 'string' && n.trim()) nameSet[n.trim()] = true;
-        });
-    }
-
-    // 2. AppState.userRoles 및 localStorage user_roles 에서 팀원 이름 추출
+    // 오직 최고 관리자 지정 팀원 관리표(userRoles)에서만 실존 유저 수집
     try {
         var roles = window.AppState ? window.AppState.userRoles : null;
         if (!roles) roles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
-        Object.keys(roles).forEach(function(k) {
-            if (k && k.trim()) nameSet[k.trim()] = true;
-        });
+        if (roles && typeof roles === 'object') {
+            Object.keys(roles).forEach(function(k) {
+                if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
+                    nameSet[k.trim()] = true;
+                }
+            });
+        }
     } catch(e){}
 
-    // 3. 현재 사용자 및 기본 필수 등록 팀원 보장
-    if (window.AppState && window.AppState.currentUser) {
-        var cur = window.AppState.currentUser.fullName || window.AppState.currentUser;
-        if (cur && typeof cur === 'string' && cur.trim()) nameSet[cur.trim()] = true;
+    if (window.AppState && window.AppState.currentUser && window.AppState.currentUser.fullName) {
+        var cur = window.AppState.currentUser.fullName;
+        if (cur && cur.trim() && cur.trim() !== '팀원') nameSet[cur.trim()] = true;
     }
-    var savedMyName = localStorage.getItem('doyakdaro_nfc_my_name');
-    if (savedMyName && savedMyName.trim()) nameSet[savedMyName.trim()] = true;
 
-    var baseDefaultUsers = ['연정민', '이동훈', '김무섭', '황지환', '김일섭', '이민우'];
-    baseDefaultUsers.forEach(function(u) { nameSet[u] = true; });
+    if (Object.keys(nameSet).length === 0) {
+        nameSet['이민우'] = true;
+    }
 
     delete nameSet['강연주'];
     delete nameSet['팀원'];
 
-    var users = Object.keys(nameSet).filter(function(u) {
-        return u !== '강연주' && u !== '팀원';
-    }).sort();
+    var users = Object.keys(nameSet).filter(Boolean).sort(function(a, b) {
+        return a.localeCompare(b, 'ko');
+    });
 
     selects.forEach(function(sel) {
         if (!sel) return;
         var currentVal = sel.value;
-        var html = '<option value="">-- 수동 출퇴근 처리할 팀원 선택 --</option>';
+        var html = '<option value="">-- 수동 출퇴근 처리할 팀원 선택 (' + users.length + '명) --</option>';
         users.forEach(function(u) {
-            html += '<option value="' + u + '">' + u + '</option>';
+            html += '<option value="' + u + '">👤 ' + u + '</option>';
         });
         sel.innerHTML = html;
         if (currentVal) sel.value = currentVal;
