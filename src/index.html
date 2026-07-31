@@ -716,6 +716,7 @@
                 if (isUserAdmin) {
                     adminBox.style.display = 'block';
                     if (typeof directPopulateAdminUserDropdown === 'function') directPopulateAdminUserDropdown();
+                    if (typeof populateAdminUserSelect === 'function') populateAdminUserSelect();
                 } else {
                     adminBox.style.display = 'none';
                 }
@@ -8572,8 +8573,20 @@
             var grid = document.getElementById('nfcUserSelectBtnGrid');
             if (!grid) return;
             
-            // 21명 팀원 명단 (가나다순)
-            var users = ['강연주', '김경미', '김동현', '김민지', '김보람', '김성민', '김아름', '김영희', '박병주', '박지훈', '서유진', '심채연', '연정민', '윤정숙', '이민우', '이철수', '장보고', '정다은', '최민수', '허병준', '허영주'];
+            // 최고 관리자 지정 팀원 관리표에서 실존 명단 동적 추출
+            var nameMap = {};
+            try {
+                var r = window.AppState ? window.AppState.userRoles : null;
+                if (!r) r = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+                if (r && typeof r === 'object') {
+                    Object.keys(r).forEach(function(k) {
+                        if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주') nameMap[k.trim()] = true;
+                    });
+                }
+            } catch(e){}
+            
+            var users = Object.keys(nameMap).filter(Boolean).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+            if (users.length === 0) users = ['이민우'];
             
             grid.innerHTML = '';
             users.forEach(function (userName) {
