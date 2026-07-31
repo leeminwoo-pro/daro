@@ -8856,8 +8856,8 @@
         }
         window.directSwitchAttendanceTab = directSwitchAttendanceTab;
 
-        // 🏃‍♂️ [근태 UI 100% 무적 강제 인라인 렌더러 - NFC 뱃지 무조건 표출 보장]
-        function directRenderAttendanceUI() {
+        // 🏃‍♂️ [모달 팝업 근태 이력 카드 목록 렌더링 헬퍼]
+        function directRenderAttendanceModalHistoryCards() {
             populateAdminUserSelect();
             var records = (window.AppState && window.AppState.attendanceRecords) ? window.AppState.attendanceRecords : [];
             var todayStr = new Date().toISOString().split('T')[0];
@@ -8933,13 +8933,14 @@
                 historyContainer.appendChild(card);
             });
         }
-        window.directRenderAttendanceUI = directRenderAttendanceUI;
+        window.directRenderAttendanceModalHistoryCards = directRenderAttendanceModalHistoryCards;
 
         setTimeout(function(){
             populateAdminUserSelect();
+            if(typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
             if(typeof renderDashboardDDayCards === 'function') renderDashboardDDayCards();
             if(typeof directFetchAttendanceFromSupabase === 'function') directFetchAttendanceFromSupabase();
-        }, 600);
+        }, 300);
     </script>
     <!-- 🚀 전역 근태 & 시스템 엔터프라이즈 엔진 스크립트 강제 바인딩 연결 (v=20260730_2303) -->
     <script src="app.js?v=20260731_1003"></script>
