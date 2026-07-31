@@ -6064,72 +6064,13 @@
         }
         window.directFilterUserRolesTable = directFilterUserRolesTable;
 
-        function directRenderUserRoles() {
-            var roleContainer = document.getElementById('adminUserRoleList');
-            var defSelect = document.getElementById('adminDefaultRoleSelect');
-            var searchInput = document.getElementById('adminUserTargetName');
-            var filterQuery = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
-            if (defSelect) {
-                var curDef = localStorage.getItem('doyakdaro_default_role') || 'viewer';
-                defSelect.value = curDef;
+        // 👥 [최고 관리자 전용 전체 팀원 관리표 렌더러 - Supabase Cloud DB 100% 직통 위임]
+        async function directRenderUserRoles() {
+            if (typeof directRenderAdminUserRolesTable === 'function') {
+                await directRenderAdminUserRolesTable();
             }
-
-            if (!roleContainer) return;
-            roleContainer.innerHTML = '';
-
-            if (!AppState.userRoles) {
-                try { AppState.userRoles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || { '이민우': 'admin' }; } catch (e) { AppState.userRoles = { '이민우': 'admin' }; }
-            }
-
-            // 🧹 오염된 {"id":...} 키 100% 자동 파싱 정돈 청소!
-            var cleanRoles = {};
-            Object.keys(AppState.userRoles).forEach(function (k) {
-                var pureK = (typeof parsePureName === 'function') ? parsePureName(k) : k;
-                if (pureK && pureK !== '팀원') {
-                    cleanRoles[pureK] = AppState.userRoles[k];
-                }
-            });
-            if (Object.keys(cleanRoles).length === 0) {
-                cleanRoles['이민우'] = 'admin';
-            }
-            AppState.userRoles = cleanRoles;
-            try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(AppState.userRoles)); } catch (e) { }
-
-            var keys = Object.keys(AppState.userRoles);
-            if (keys.length === 0) {
-                roleContainer.innerHTML = '<div style="font-size:0.82rem; color:var(--text-muted); text-align:center; padding:10px;">등록된 팀원 권한이 없습니다.</div>';
-                return;
-            }
-
-            keys.forEach(function (uName) {
-                if (filterQuery && uName.toLowerCase().indexOf(filterQuery) === -1) return;
-
-                var r = AppState.userRoles[uName];
-                var row = document.createElement('div');
-                row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:10px; border:1px solid rgba(15,23,42,0.12); font-size:0.88rem;';
-
-                var rColor = r === 'admin' ? '#d97706' : (r === 'viewer' ? '#2563eb' : (r === 'blocked' ? '#ef4444' : '#059669'));
-                var iconTag = r === 'admin' ? '👑' : (r === 'viewer' ? '👁️' : (r === 'blocked' ? '🚫' : '✏️'));
-
-                row.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <strong style="color:#0f172a; font-size:0.92rem; font-weight:800;">${iconTag} ${uName}</strong>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <button type="button" onclick="directResetUserPasscodeFromAdmin('${uName}')" style="padding:4px 8px; font-size:0.75rem; background:rgba(245,158,11,0.1); color:#d97706; border:1px solid rgba(245,158,11,0.3); border-radius:8px; font-weight:700; cursor:pointer;" title="개별 비밀번호 변경/리셋">🔑 암호 변경</button>
-                        <select onchange="directChangeUserRoleFromTable('${uName}', this.value)" style="padding:5px 10px; font-size:0.82rem; background:#ffffff; color:${rColor}; border:1px solid ${rColor}; border-radius:8px; font-weight:800;">
-                            <option value="editor" ${r === 'editor' ? 'selected' : ''}>✏️ 작성자</option>
-                            <option value="viewer" ${r === 'viewer' ? 'selected' : ''}>👁️ 뷰어 (읽기전용)</option>
-                            <option value="admin" ${r === 'admin' ? 'selected' : ''}>👑 최고 관리자</option>
-                            <option value="blocked" ${r === 'blocked' ? 'selected' : ''}>🚫 접속 차단 (퇴사자)</option>
-                            <option value="deleted">🗑️ 목록에서 삭제</option>
-                        </select>
-                    </div>
-                `;
-                roleContainer.appendChild(row);
-            });
         }
+        window.directRenderUserRoles = directRenderUserRoles;
 
         function directRemoveUserRole(uName) {
             if (confirm("'" + uName + "' 팀원의 지정 권한을 삭제하시겠습니까?")) {
