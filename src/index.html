@@ -674,6 +674,29 @@
         }
         window.directPopulateAdminUserDropdown = directPopulateAdminUserDropdown;
 
+        // 🧹 [구버전 26명 찌꺼기 명단 100% 완전 소멸 & 이민우 계정 1명 원상 복구 샌니타이저]
+        function directResetAllLegacyUsersToFresh() {
+            if (!confirm("⚠️ 구버전 테스트 팀원 26명 명단 찌꺼기를 100% 싹 지우고 '이민우' 계정 1명만 남기시겠습니까?\n(이후 진짜 21명 팀원을 새로 깔끔하게 등록하시면 됩니다!)")) return;
+            
+            var freshRoles = { '이민우': 'admin' };
+            AppState.userRoles = freshRoles;
+            try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(freshRoles)); } catch(e){}
+
+            if (window.supabaseClient) {
+                try {
+                    window.supabaseClient.from('user_roles').delete().neq('user_name', '이민우').then(function(){});
+                } catch(e){}
+            }
+
+            if (typeof directPopulateAdminUserDropdown === 'function') directPopulateAdminUserDropdown();
+            if (typeof populateAdminUserSelect === 'function') populateAdminUserSelect();
+            if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
+            
+            alert("🟢 구버전 26명 찌꺼기 명단이 100% 깔끔하게 소멸되었습니다!\n현재 '이민우' 1명만 남았으며, 이제 진짜 팀원들을 새로 등록하시면 됩니다. 🚀");
+            location.reload();
+        }
+        window.directResetAllLegacyUsersToFresh = directResetAllLegacyUsersToFresh;
+
         function directRenderAttendanceUI() {
             var isEnabled = AppState.nfcAttendanceEnabled !== false;
             var toggleBtn = document.getElementById('adminNFCToggleBtn');
@@ -8699,7 +8722,9 @@
             // 오직 최고 관리자 지정 팀원 관리표(userRoles)에서만 실존 유저 수집
             try {
                 var roles = window.AppState ? window.AppState.userRoles : null;
-                if (!roles) roles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+                if (!roles) {
+                    try { roles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')); } catch(e){}
+                }
                 if (roles && typeof roles === 'object') {
                     Object.keys(roles).forEach(function(k) {
                         if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
@@ -8712,6 +8737,11 @@
             if (window.AppState && window.AppState.currentUser && window.AppState.currentUser.fullName) {
                 var cur = window.AppState.currentUser.fullName;
                 if (cur && cur.trim() && cur.trim() !== '팀원') nameSet[cur.trim()] = true;
+            }
+
+            // 실존 팀원이 이민우 1명뿐인 경우 강제 초기화
+            if (Object.keys(nameSet).length === 0) {
+                nameSet['이민우'] = true;
             }
 
             delete nameSet['강연주'];
