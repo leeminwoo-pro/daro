@@ -1604,6 +1604,18 @@ async function directProcessNFCTagScan(tagCode, tagUid) {
     }
 
     var actorName = typeof getCurrentActorName === 'function' ? getCurrentActorName() : '팀원';
+    
+    // 🛡️ [미등록 팀원 1초 보안 차단 파수꾼] 최고 관리자 제어판 사전 등록 검증
+    if (actorName && actorName !== '이민우' && actorName !== '팀원') {
+        var rolesObj = AppState.userRoles;
+        if (!rolesObj) {
+            try { rolesObj = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {}; } catch(e){}
+        }
+        if (!rolesObj || !rolesObj.hasOwnProperty(actorName)) {
+            alert("🚫 [사전 승인 미등록 팀원 통보]\n\n'" + actorName + "' 님은 아직 최고 관리자(이민우)에 의해 [전체팀원 관리표]에 등록되지 않은 성함입니다.\n\n최고 관리자(이민우)님에게 팀원 등록 요청 후 다시 태깅해 주세요!");
+            return false;
+        }
+    }
     var todayStr = typeof getTodayStr === 'function' ? getTodayStr() : new Date().toISOString().split('T')[0];
 
     var records = AppState.attendanceRecords || [];
