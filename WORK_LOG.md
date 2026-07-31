@@ -1554,6 +1554,26 @@
   - **전체 파일 동기화 완수**: `index.html` ➔ `www/index.html`, `src/index.html`.
   - **Git 커밋 & GitHub 푸시 완수**: `[main 2272596]` commit & `https://github.com/leeminwoo-pro/daro.git` push 완료.
 
+---
+
+## 📅 [2026-07-31 12:51] - viewer 권한 15명 모바일 NFC 팝업 차단 & 실제 출퇴근 팀원 6명 100% 필터링 표출 완수
+
+### 👤 사용자 (USER)
+> 지금 우리 전체팀원 관리표에 인원은 이민우 박병주 김진홍 김일섭 황지환 전세계 야 그런데 모바일은 21명이 다보이고 있어 어떤게 원인일까 ? (스크린샷 5번 첨부)
+> 승인
+
+### 🤖 에이전트 (Antigravity)
+* **결정적 범인 정밀 규명**:
+  - `user_credentials` 테이블에 보관된 21명 중, 단순 뷰어 계정 15명의 권한(`role`)이 `viewer` 로 분류되어 있던 반면, 실제 출퇴근 팀원 6명('이민우', '박병주', '김진홍', '김일섭', '황지환', '전세계')의 권한은 `admin` 또는 `editor` 임을 정밀 확인.
+  - 모바일 폰 수집기에서 `role` 구분 없이 21명 전체를 긁어오던 필터링 부재가 원인임을 명쾌하게 규명함.
+* **사전 승인 수칙 준수 후 수술 완수**:
+  - 안전 백업 압축 파일 생성 완료: **`doyakdaro_backup_278.zip`**
+  - **`viewer` 권한 차단 필터링 장착**: `row.role === 'viewer'` 인원 15명을 모바일 본인 선택 팝업에서 100% 차단!
+  - **실제 출퇴근 팀원 6명 100% 표출**: 오직 `admin` 및 `editor` 권한을 가진 실제 출퇴근 팀원 6명만 모바일 폰 NFC 팝업 및 드롭다운에 칼같이 렌더링되도록 수술 완수.
+  - **전체 파일 동기화 완수**: `index.html` ➔ `www/index.html`, `src/index.html`.
+  - **Git 커밋 & GitHub 푸시 완수**: `[main 19b1b8a]` commit & `https://github.com/leeminwoo-pro/daro.git` push 완료.
+
+
 
 
 

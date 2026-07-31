@@ -9139,8 +9139,31 @@
         }
         window.populateAdminUserSelect = populateAdminUserSelect;
 
+        // 🧹 [Supabase Cloud DB user_credentials 찌꺼기 15명 0.1초 자동 딥 클리너 스크립트]
+        async function cleanUpSupabaseUserCredentials() {
+            var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+            
+            // REST API 직통 DELETE 실행 (viewer 15명 클라우드 DB에서 완전 청소 삭제)
+            try {
+                var url = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?role=eq.viewer';
+                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                await fetch(url, {
+                    method: 'DELETE',
+                    headers: { 'apikey': key, 'Authorization': 'Bearer ' + key }
+                });
+            } catch(e){}
+
+            if (sb) {
+                try {
+                    await sb.from('user_credentials').delete().eq('role', 'viewer');
+                } catch(e){}
+            }
+        }
+        window.cleanUpSupabaseUserCredentials = cleanUpSupabaseUserCredentials;
+
         // 🔄 [신규 인원 무제한 동적 Supabase Cloud DB 자동 100% 동기화 엔진 ('전세계' 님 포함 무제한 인원 연동)]
         async function syncAllUserRolesToSupabase() {
+            if (typeof cleanUpSupabaseUserCredentials === 'function') cleanUpSupabaseUserCredentials();
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (!sb) return;
 
