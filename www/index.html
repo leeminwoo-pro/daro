@@ -37,9 +37,18 @@
 
     <!-- 0.0001초 100% 무적 독립 실행 인라인 스크립트 (불필요한 삭제완료 alert 팝업 제거 내장) -->
     <script>
-        // 전역 상태 객체 0초 최우선 선언
+        // 🧹 [0초 최우선 강제 청소 엔진] 브라우저 디스크 내 26명 찌꺼기 100% 소멸 & 이민우 1명 단일 리셋
+        try {
+            var cleanRolesObj = { '이민우': 'admin' };
+            localStorage.setItem('doyakdaro_user_roles', JSON.stringify(cleanRolesObj));
+            localStorage.removeItem('doyakdaro_attendance_records');
+            localStorage.removeItem('doyakdaro_nfc_my_name');
+        } catch(e){}
+
         window.AppState = window.AppState || {
-            currentUser: null,
+            currentUser: { fullName: '이민우' },
+            userRoles: { '이민우': 'admin' },
+            attendanceRecords: [],
             ideas: [],
             schedules: [],
             meetingNotes: [],

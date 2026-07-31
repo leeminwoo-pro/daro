@@ -1340,7 +1340,20 @@ window.showSuccessToast = showSuccessToast;
 
 // =================================================================
 // 🏃‍♂️ [NFC 기반 스마트 출퇴근 & 팀원 실시간 근태 관리 엔진]
-// =================================================================
+// 🧹 [0초 최우선 강제 청소 엔진] 브라우저 디스크 내 26명 찌꺼기 100% 소멸 & 이민우 1명 단일 리셋
+try {
+    localStorage.setItem('doyakdaro_user_roles', JSON.stringify({ '이민우': 'admin' }));
+    localStorage.removeItem('doyakdaro_attendance_records');
+    localStorage.removeItem('doyakdaro_nfc_my_name');
+} catch(e){}
+
+if (window.AppState) {
+    window.AppState.userRoles = { '이민우': 'admin' };
+    window.AppState.attendanceRecords = [];
+}
+
+const SUPABASE_URL = 'https://fhwqaixpxffnapmqvvdy.supabase.co';
+
 if (!AppState.attendanceRecords) AppState.attendanceRecords = [];
 
 // 1. 근태 데이터 불러오기 (로컬 스토리지 & Supabase 클라우드)
