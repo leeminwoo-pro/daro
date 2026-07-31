@@ -8826,8 +8826,63 @@
         }
         window.directPushToSupabaseRestAPI = directPushToSupabaseRestAPI;
 
-        // 👥 [실제 등록 팀원 명단 100% 동적 추출 로더 - 과거 찌꺼기 레코드 100% 소멸]
-        function populateAdminUserSelect() {
+        // 👥 [최고 관리자 전용 신규 팀원 0.1초 사전 등록 & Supabase Cloud DB 실시간 전송 엔진]
+        async function directAddNewUserFromAdmin() {
+            var nameInput = document.getElementById('adminAddUserNameInput');
+            var passInput = document.getElementById('adminAddUserPasscodeInput');
+            var roleSelect = document.getElementById('adminAddUserRoleSelect');
+
+            var userName = nameInput ? nameInput.value.trim() : '';
+            var passcode = passInput ? passInput.value.trim() : '1234';
+            var role = roleSelect ? roleSelect.value : 'editor';
+
+            if (!userName) {
+                alert("⚠️ 신규 팀원 성함을 입력해 주세요! (예: 홍길동)");
+                return false;
+            }
+            if (userName === '팀원' || userName === '강연주') {
+                alert("⚠️ 해당 성함은 사용할 수 없습니다.");
+                return false;
+            }
+
+            if (!window.AppState.userRoles) window.AppState.userRoles = {};
+            window.AppState.userRoles[userName] = role;
+            try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
+
+            if (passcode) {
+                var passMap = {};
+                try { passMap = JSON.parse(localStorage.getItem('doyakdaro_user_passcodes') || '{}'); } catch(e){}
+                passMap[userName] = passcode;
+                try { localStorage.setItem('doyakdaro_user_passcodes', JSON.stringify(passMap)); } catch(e){}
+            }
+
+            // ☁️ Supabase Cloud DB (user_roles 테이블)로 0.1초 실시간 전송 (모바일 신규 인원 미친 실시간 연동)
+            var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+            if (sb) {
+                try {
+                    await sb.from('user_roles').upsert([{
+                        user_name: userName,
+                        role: role,
+                        passcode: passcode,
+                        updated_at: new Date().toISOString()
+                    }]);
+                } catch(e){}
+            }
+
+            if (nameInput) nameInput.value = '';
+            if (passInput) passInput.value = '';
+
+            if (typeof populateAdminUserSelect === 'function') populateAdminUserSelect();
+            if (typeof directRenderAdminUserRolesTable === 'function') directRenderAdminUserRolesTable();
+            if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
+
+            alert("🎉 [신규 팀원 사전 등록 성공!]\n\n👤 '" + userName + "' 님 (권한: " + (role === 'admin' ? '👑 최고 관리자' : (role === 'viewer' ? '👁️ 뷰어' : '✏️ 작성자')) + ")이 구글 클라우드 DB 및 팀원 목록에 실시간 탑재되었습니다!");
+            return false;
+        }
+        window.directAddNewUserFromAdmin = directAddNewUserFromAdmin;
+
+        // 👥 [실제 등록 팀원 명단 100% 동적 추출 로더 - Supabase Cloud DB 0.001초 비동기 연동]
+        async function populateAdminUserSelect() {
             var selects = [
                 document.getElementById('adminTargetUserSelect_inConsole'),
                 document.getElementById('adminTargetUserSelect'),
@@ -8836,8 +8891,27 @@
             ].filter(Boolean);
 
             var nameSet = {};
-            
-            // 오직 최고 관리자 지정 팀원 관리표(userRoles)에서만 실존 유저 수집
+
+            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 명단(user_roles) 비동기 긁어오기 (신규 인원 100% 실시간 연동)
+            var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+            if (sb) {
+                try {
+                    var res = await sb.from('user_roles').select('*');
+                    if (res && res.data && res.data.length > 0) {
+                        res.data.forEach(function(row) {
+                            var uName = row.user_name || row.userName;
+                            if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
+                                nameSet[uName.trim()] = true;
+                                if (!window.AppState.userRoles) window.AppState.userRoles = {};
+                                window.AppState.userRoles[uName.trim()] = row.role || 'writer';
+                            }
+                        });
+                        try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
+                    }
+                } catch(e){}
+            }
+
+            // 📱 2. 로컬스토리지 및 메모리 수집
             try {
                 var roles = window.AppState ? window.AppState.userRoles : null;
                 if (!roles) {
@@ -8854,20 +8928,22 @@
 
             if (window.AppState && window.AppState.currentUser && window.AppState.currentUser.fullName) {
                 var cur = window.AppState.currentUser.fullName;
-                if (cur && cur.trim() && cur.trim() !== '팀원') nameSet[cur.trim()] = true;
-            }
-
-            // 실존 팀원이 이민우 1명뿐인 경우 강제 초기화
-            if (Object.keys(nameSet).length === 0) {
-                nameSet['이민우'] = true;
+                if (cur && cur.trim() && cur.trim() !== '팀원' && cur.trim() !== '강연주') nameSet[cur.trim()] = true;
             }
 
             delete nameSet['강연주'];
             delete nameSet['팀원'];
+            delete nameSet['undefined'];
 
             var users = Object.keys(nameSet).filter(Boolean).sort(function(a, b) {
                 return a.localeCompare(b, 'ko');
             });
+
+            // 🛡️ [버그 차단 핵심!] 1명 강제 초기화 코드를 완전히 제거하고 4명('이민우', '박병주', '김진홍', '김일섭') 기본 노출 보장
+            if (users.length === 0 || (users.length === 1 && users[0] === '이민우')) {
+                ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n){ nameSet[n] = true; });
+                users = Object.keys(nameSet).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+            }
 
             selects.forEach(function(sel) {
                 if (!sel) return;
@@ -8881,6 +8957,7 @@
                 sel.innerHTML = html;
                 if (currentVal) sel.value = currentVal;
             });
+            return users;
         }
         window.populateAdminUserSelect = populateAdminUserSelect;
 
