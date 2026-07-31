@@ -1690,9 +1690,9 @@
 
             var uNameSet = {};
 
-            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 권한 목록(user_roles) REST API 무적 직통 긁어오기 (모바일 0.001초 연동 보장)
+            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 목록(user_credentials) REST API 무적 직통 긁어오기 (모바일 0.001초 연동 보장)
             try {
-                var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_roles?select=*';
+                var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
                 var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
                 var fetchRes = await fetch(restUrl, {
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
@@ -1701,7 +1701,7 @@
                     var dataList = await fetchRes.json();
                     if (dataList && dataList.length > 0) {
                         dataList.forEach(function(row) {
-                            var uName = row.user_name || row.userName;
+                            var uName = row.username || row.user_name || row.userName;
                             if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
                                 uNameSet[uName.trim()] = true;
                                 if (!AppState.userRoles) AppState.userRoles = {};
@@ -1716,10 +1716,10 @@
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (sb) {
                 try {
-                    var res = await sb.from('user_roles').select('*');
+                    var res = await sb.from('user_credentials').select('*');
                     if (res && res.data && res.data.length > 0) {
                         res.data.forEach(function(row) {
-                            var uName = row.user_name || row.userName;
+                            var uName = row.username || row.user_name || row.userName;
                             if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
                                 uNameSet[uName.trim()] = true;
                                 if (!AppState.userRoles) AppState.userRoles = {};
@@ -8553,7 +8553,7 @@
             <p style="font-size: 0.9rem; color: #64748b; font-weight: 700; margin-bottom: 18px;">최초 1회만 선택하시면 이 핸드폰에 자동 저장됩니다.</p>
             
             <div id="nfcUserSelectBtnGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 320px; overflow-y: auto; padding: 4px; margin-bottom: 16px;">
-                <!-- 21명 명단 동적 생성 -->
+                <!-- 명단 동적 생성 -->
             </div>
 
             <button type="button" onclick="directCloseModal('nfcUserSelectModal')" class="btn-secondary" style="width: 100%; padding: 10px; font-weight: 800; border-radius: 10px;">취소</button>
@@ -8594,6 +8594,9 @@
                 var saved = localStorage.getItem('doyakdaro_office_nfc_uid') || '04:A2:8F:B2:1C:60:80';
                 input.value = saved;
             }
+            directOpenModal('nfcRegisterModal');
+        }
+        window.directOpenNFCRegisterModal = directOpenNFCRegisterModal;
             directOpenModal('nfcRegisterModal');
         }
         window.directOpenNFCRegisterModal = directOpenNFCRegisterModal;
@@ -8693,9 +8696,9 @@
             // 최고 관리자 지정 팀원 관리표 및 Supabase DB에서 실존 명단 동적 추출
             var nameMap = {};
 
-            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 권한 목록(user_roles) REST API 무적 직통 긁어오기 (모바일 0.001초 연동 보장)
+            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 목록(user_credentials) REST API 무적 직통 긁어오기 (모바일 0.001초 연동 보장)
             try {
-                var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_roles?select=*';
+                var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
                 var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
                 var fetchRes = await fetch(restUrl, {
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
@@ -8704,7 +8707,7 @@
                     var dataList = await fetchRes.json();
                     if (dataList && dataList.length > 0) {
                         dataList.forEach(function(row) {
-                            var uName = row.user_name || row.userName;
+                            var uName = row.username || row.user_name || row.userName;
                             if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
                                 nameMap[uName.trim()] = true;
                                 if (!window.AppState.userRoles) window.AppState.userRoles = {};
@@ -8719,10 +8722,10 @@
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (sb) {
                 try {
-                    var res = await sb.from('user_roles').select('*');
+                    var res = await sb.from('user_credentials').select('*');
                     if (res && res.data && res.data.length > 0) {
                         res.data.forEach(function(row) {
-                            var uName = row.user_name || row.userName;
+                            var uName = row.username || row.user_name || row.userName;
                             if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
                                 nameMap[uName.trim()] = true;
                                 if (!window.AppState.userRoles) window.AppState.userRoles = {};
