@@ -633,7 +633,46 @@
                 modal.style.zIndex = '4000000000';
             }
         }
-        window.showNFCToastNotice = showNFCToastNotice;
+        // 👑 최고 관리자 전용 수동 대리 제어 드롭다운 동적 채우기 함수 (과거 레코드 찌꺼기 싹 제거)
+        function directPopulateAdminUserDropdown() {
+            var selectEl = document.getElementById('adminTargetUserSelect');
+            if (!selectEl) return;
+            selectEl.innerHTML = '';
+
+            var uNameSet = {};
+            try {
+                var rolesObj = AppState.userRoles;
+                if (!rolesObj) {
+                    rolesObj = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+                }
+                if (rolesObj && typeof rolesObj === 'object') {
+                    Object.keys(rolesObj).forEach(function(n) {
+                        if (n && n.trim() && n.trim() !== '팀원' && n.trim() !== '강연주' && n.trim() !== 'undefined') {
+                            uNameSet[n.trim()] = true;
+                        }
+                    });
+                }
+            } catch(e){}
+
+            if (AppState.currentUser && AppState.currentUser.fullName && AppState.currentUser.fullName.trim() !== '팀원') {
+                uNameSet[AppState.currentUser.fullName.trim()] = true;
+            }
+
+            var userNames = Object.keys(uNameSet).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+            
+            var defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = '-- 수동 출퇴근 처리할 팀원 선택 (' + userNames.length + '명) --';
+            selectEl.appendChild(defaultOpt);
+
+            userNames.forEach(function(uName) {
+                var opt = document.createElement('option');
+                opt.value = uName;
+                opt.textContent = '👤 ' + uName;
+                selectEl.appendChild(opt);
+            });
+        }
+        window.directPopulateAdminUserDropdown = directPopulateAdminUserDropdown;
 
         function directRenderAttendanceUI() {
             var isEnabled = AppState.nfcAttendanceEnabled !== false;
@@ -724,15 +763,25 @@
                 }
             }
 
-            // 1. 등록된 모든 유저 명단 동적 합산 (가상 예시 더미 이름 제거 및 100% 실존 유저 집계)
+            // 1. 최고 관리자 제어판 [전체팀원 관리표] 등록 명단 100% 동적 집계 (과거 찌꺼기 레코드 제외)
             var uNameSet = {};
-            if (AppState.currentUser && AppState.currentUser.fullName) {
-                uNameSet[AppState.currentUser.fullName] = true;
+            try {
+                var rolesObj = AppState.userRoles;
+                if (!rolesObj) {
+                    rolesObj = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+                }
+                if (rolesObj && typeof rolesObj === 'object') {
+                    Object.keys(rolesObj).forEach(function(n) {
+                        if (n && n.trim() && n.trim() !== '팀원' && n.trim() !== '강연주' && n.trim() !== 'undefined') {
+                            uNameSet[n.trim()] = true;
+                        }
+                    });
+                }
+            } catch(e){}
+
+            if (AppState.currentUser && AppState.currentUser.fullName && AppState.currentUser.fullName.trim() !== '팀원') {
+                uNameSet[AppState.currentUser.fullName.trim()] = true;
             }
-            if (AppState.userRoles) {
-                Object.keys(AppState.userRoles).forEach(function(n){ if(n) uNameSet[n] = true; });
-            }
-            records.forEach(function(r){ if (r.userName) uNameSet[r.userName] = true; });
             
             var userNames = Object.keys(uNameSet);
             if (userNames.length === 0) userNames = [actorName];
