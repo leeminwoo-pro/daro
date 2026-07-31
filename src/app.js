@@ -2019,8 +2019,9 @@ function populateAdminUserSelect() {
     var selects = [
         document.getElementById('adminTargetUserSelect_inConsole'),
         document.getElementById('adminTargetUserSelect'),
-        document.getElementById('adminTargetUserSelect_inModal')
-    ];
+        document.getElementById('adminTargetUserSelect_inModal'),
+        document.getElementById('attendanceUserFilter')
+    ].filter(Boolean);
 
     var nameSet = {};
     
@@ -2056,7 +2057,9 @@ function populateAdminUserSelect() {
     selects.forEach(function(sel) {
         if (!sel) return;
         var currentVal = sel.value;
-        var html = '<option value="">-- 수동 출퇴근 처리할 팀원 선택 (' + users.length + '명) --</option>';
+        var isFilter = sel.id === 'attendanceUserFilter';
+        var defaultText = isFilter ? '👤 전체 팀원' : ('-- 수동 출퇴근 처리할 팀원 선택 (' + users.length + '명) --');
+        var html = '<option value="' + (isFilter ? 'ALL' : '') + '">' + defaultText + '</option>';
         users.forEach(function(u) {
             html += '<option value="' + u + '">👤 ' + u + '</option>';
         });
