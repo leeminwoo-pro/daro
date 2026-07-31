@@ -9059,7 +9059,28 @@
 
             var rolesMap = {};
 
-            // ☁️ Supabase Cloud DB (user_credentials)에서 최신 레코드 100% 직통 조회
+            // ☁️ Supabase Cloud DB (user_credentials) REST API 무적 직통 긁어오기 (모바일과 100% 동일한 무적 수집)
+            try {
+                var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var fetchRes = await fetch(restUrl, {
+                    headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
+                });
+                if (fetchRes.ok) {
+                    var dataList = await fetchRes.json();
+                    if (dataList && dataList.length > 0) {
+                        dataList.forEach(function(r) {
+                            var rRole = r.role || 'editor';
+                            if (rRole === 'viewer') return; // 🚫 단순 뷰어 제외
+                            var u = r.username || r.user_name || r.userName;
+                            if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주') {
+                                rolesMap[u.trim()] = rRole;
+                            }
+                        });
+                    }
+                }
+            } catch(e){}
+
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (sb) {
                 try {
@@ -9126,7 +9147,31 @@
 
             var nameSet = {};
 
-            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 명단(user_credentials) 비동기 긁어오기 (viewer 권한 차단)
+            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 명단(user_credentials) REST API 무적 직통 긁어오기
+            try {
+                var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var fetchRes = await fetch(restUrl, {
+                    headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
+                });
+                if (fetchRes.ok) {
+                    var dataList = await fetchRes.json();
+                    if (dataList && dataList.length > 0) {
+                        dataList.forEach(function(row) {
+                            var rRole = row.role || 'writer';
+                            if (rRole === 'viewer') return; // 🚫 단순 뷰어 차단
+                            var uName = row.username || row.user_name || row.userName;
+                            if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
+                                nameSet[uName.trim()] = true;
+                                if (!window.AppState.userRoles) window.AppState.userRoles = {};
+                                window.AppState.userRoles[uName.trim()] = rRole;
+                            }
+                        });
+                        try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
+                    }
+                }
+            } catch(e){}
+
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (sb) {
                 try {

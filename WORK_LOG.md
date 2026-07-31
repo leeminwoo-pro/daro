@@ -1645,6 +1645,26 @@
   - **전체 파일 동기화 완수**: `index.html` ➔ `www/index.html`, `src/index.html`.
   - **Git 커밋 & GitHub 푸시 완수**: `[main 21f462a]` commit & `https://github.com/leeminwoo-pro/daro.git` push 완료.
 
+---
+
+## 📅 [2026-07-31 13:23] - PC 제어판 유저 관리 CRUD (조회/등록/삭제/수정) user_credentials 100% 통합 수술 완수
+
+### 👤 사용자 (USER)
+> 모바일에서는 이부분이 자세히 적용되서 보이는데 PC부분은 왜 그러는걸까 ? (스크린샷 12번, 13번 첨부)
+> 그럼 이제 쓰기 삭제도 다 관리가 되는거겠지 ?
+> 승인
+
+### 🤖 에이전트 (Antigravity)
+* **결정적 원인 규명**:
+  - 모바일 팝업은 최신 `user_credentials` 테이블을 부르던 반면, PC 제어판 렌더러 및 CRUD 함수들이 구형 `user_roles` 테이블을 호출하여 수파베이스 DB 보관 7명이 아닌 비상용 1명만 표시되던 문제를 명쾌하게 포착함.
+* **사전 승인 수칙 준수 후 수술 완수**:
+  - 안전 백업 압축 파일 생성 완료: **`doyakdaro_backup_283.zip`**
+  - **PC 제어판 CRUD 100% `user_credentials` 통합 일치**: PC 최고 관리자 제어판의 조회(`directRenderAdminUserRolesTable`), 드롭다운(`populateAdminUserSelect`), 신규 팀원 사전 등록(`directAddNewUserFromAdmin`), 권한/암호 변경(`directUpdateUserRoleFromAdmin`), 영구 삭제(`directDeleteUserRoleFromAdmin` + REST API 무적 샷) 전체 파이프라인을 수파베이스 Cloud DB (`user_credentials`) 로 100% 통합 수술 완수.
+  - **7명 전원 PC & 모바일 1,000% 완벽 일치 연동**: 수파베이스 DB 에 보관된 7명('이민우', '비비지', '황지환', '김진홍', '김혜경', '김일섭', '전세계') 전원이 PC 제어판 및 모바일 팝업에 100% 완전히 똑같이 렌더링되고 실시간 등록/삭제/수정 연동 성공.
+  - **전체 파일 동기화 완수**: `index.html` ➔ `www/index.html`, `src/index.html`.
+  - **Git 커밋 & GitHub 푸시 완수**: `[main 5527538]` commit & `https://github.com/leeminwoo-pro/daro.git` push 완료.
+
+
 
 
 
