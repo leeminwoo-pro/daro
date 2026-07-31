@@ -1678,8 +1678,8 @@
         }
         window.showElderNFCBigNotice = showElderNFCBigNotice;
 
-        // 👤 [방법 2: 최초 1회 본인 이름 대형 선택 모달 표출 함수 - 실제 등록 21명 동적 수집]
-        function openNFCUserSelectModal(callback) {
+        // 👤 [방법 2: 최초 1회 본인 이름 대형 선택 모달 표출 함수 - Supabase Cloud DB & 로컬 100% 비동기 동적 수집]
+        async function openNFCUserSelectModal(callback) {
             var overlay = document.getElementById('nfcUserSelectModalOverlay');
             if (!overlay) {
                 overlay = document.createElement('div');
@@ -1688,10 +1688,28 @@
                 document.body.appendChild(overlay);
             }
 
-            // 🎯 최고 관리자 제어판 [전체팀원 관리표] 실존 명단 100% 동적 수집 (과거 찌꺼기 레코드 싹 제거)
             var uNameSet = {};
-            
-            // 오직 최고 관리자 지정 팀원 관리표에서만 실존 유저 수집
+
+            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 권한 목록(user_roles) 비동기 긁어오기 (모바일-PC 100% 연동 보장)
+            var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+            if (sb) {
+                try {
+                    var res = await sb.from('user_roles').select('*');
+                    if (res && res.data && res.data.length > 0) {
+                        res.data.forEach(function(row) {
+                            var uName = row.user_name || row.userName;
+                            if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
+                                uNameSet[uName.trim()] = true;
+                                if (!AppState.userRoles) AppState.userRoles = {};
+                                AppState.userRoles[uName.trim()] = row.role || 'writer';
+                            }
+                        });
+                        try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(AppState.userRoles)); } catch(e){}
+                    }
+                } catch(e){}
+            }
+
+            // 📱 2. 로컬스토리지 및 메모리 등록 유저 수집
             try {
                 var rolesObj = AppState.userRoles;
                 if (!rolesObj) {
@@ -1706,6 +1724,17 @@
                 }
             } catch(e){}
 
+            // 🏃‍♂️ 3. 최근 근태 레코드 유저 수집
+            try {
+                var records = AppState.attendanceRecords || JSON.parse(localStorage.getItem('doyakdaro_attendance_records')) || [];
+                records.forEach(function(r) {
+                    var name = r.userName || r.userId;
+                    if (name && name.trim() && name.trim() !== '팀원' && name.trim() !== '강연주' && name.trim() !== 'undefined') {
+                        uNameSet[name.trim()] = true;
+                    }
+                });
+            } catch(e){}
+
             if (AppState.currentUser && AppState.currentUser.fullName && AppState.currentUser.fullName.trim() !== '팀원') {
                 uNameSet[AppState.currentUser.fullName.trim()] = true;
             }
@@ -1713,6 +1742,12 @@
             var teamNames = Object.keys(uNameSet).filter(Boolean).sort(function(a, b) {
                 return a.localeCompare(b, 'ko');
             });
+
+            // 🛡️ 만약 아직 등록팀원이 0명이면 등록된 4명('이민우', '박병주', '김진홍', '김일섭') 기본 노출 보장
+            if (teamNames.length === 0 || (teamNames.length === 1 && teamNames[0] === '이민우')) {
+                ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n){ uNameSet[n] = true; });
+                teamNames = Object.keys(uNameSet).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+            }
 
             var buttonsHtml = teamNames.map(function(name) {
                 return '<button type="button" onclick="selectMyNFCNameAndProceed(\'' + name + '\')" style="background:#ffffff; color:#0f172a; border:2px solid rgba(37,99,235,0.18); font-size:1.1rem; font-weight:800; padding:16px 12px; border-radius:16px; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.04); display:flex; align-items:center; justify-content:center; gap:6px; transition:transform 0.1s, border-color 0.1s;" onmouseover="this.style.borderColor=\'#2563eb\'; this.style.color=\'#2563eb\';" onmouseout="this.style.borderColor=\'rgba(37,99,235,0.18)\'; this.style.color=\'#0f172a\';">👤 ' + name + '</button>';
@@ -8636,40 +8671,77 @@
         }
         window.showElderNFCBigNotice = showElderNFCBigNotice;
 
-        // 👤 [어르신 맞춤] 21명 본인 이름 최초 선택 모달 열기
-        function openNFCUserSelectModal() {
+        // 👤 [어르신 맞춤] 본인 이름 최초 선택 모달 열기 (Supabase Cloud DB 100% 비동기 동적 동기화)
+        async function openNFCUserSelectModal() {
             var grid = document.getElementById('nfcUserSelectBtnGrid');
-            if (!grid) return;
             
-            // 최고 관리자 지정 팀원 관리표에서 실존 명단 동적 추출
+            // 최고 관리자 지정 팀원 관리표 및 Supabase DB에서 실존 명단 동적 추출
             var nameMap = {};
+
+            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 권한 목록(user_roles) 비동기 긁어오기 (모바일-PC 100% 연동 보장)
+            var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+            if (sb) {
+                try {
+                    var res = await sb.from('user_roles').select('*');
+                    if (res && res.data && res.data.length > 0) {
+                        res.data.forEach(function(row) {
+                            var uName = row.user_name || row.userName;
+                            if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
+                                nameMap[uName.trim()] = true;
+                                if (!window.AppState.userRoles) window.AppState.userRoles = {};
+                                window.AppState.userRoles[uName.trim()] = row.role || 'writer';
+                            }
+                        });
+                        try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
+                    }
+                } catch(e){}
+            }
+
             try {
                 var r = window.AppState ? window.AppState.userRoles : null;
                 if (!r) r = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
                 if (r && typeof r === 'object') {
                     Object.keys(r).forEach(function(k) {
-                        if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주') nameMap[k.trim()] = true;
+                        if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') nameMap[k.trim()] = true;
                     });
                 }
             } catch(e){}
             
             var users = Object.keys(nameMap).filter(Boolean).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
-            if (users.length === 0) users = ['이민우'];
             
-            grid.innerHTML = '';
-            users.forEach(function (userName) {
-                var btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'btn-primary';
-                btn.style.cssText = 'background: #f1f5f9; color: #0f172a; border: 2px solid #cbd5e1; border-radius: 12px; padding: 14px 8px; font-size: 1.05rem; font-weight: 800; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.03);';
-                btn.innerHTML = userName;
-                btn.onclick = function () {
-                    selectNFCUserAndClock(userName);
-                };
-                grid.appendChild(btn);
-            });
+            // 🛡️ 만약 아직 등록팀원이 0명이거나 1명이면 등록된 4명('이민우', '박병주', '김진홍', '김일섭') 기본 노출 보장
+            if (users.length === 0 || (users.length === 1 && users[0] === '이민우')) {
+                ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n){ nameMap[n] = true; });
+                users = Object.keys(nameMap).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+            }
 
-            directOpenModal('nfcUserSelectModal');
+            if (grid) {
+                grid.innerHTML = '';
+                users.forEach(function (userName) {
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn-primary';
+                    btn.style.cssText = 'background: #ffffff; color: #0f172a; border: 2px solid #cbd5e1; border-radius: 12px; padding: 14px 8px; font-size: 1.05rem; font-weight: 800; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.03);';
+                    btn.innerHTML = '👤 ' + userName;
+                    btn.onclick = function () {
+                        selectNFCUserAndClock(userName);
+                    };
+                    grid.appendChild(btn);
+                });
+            }
+
+            // 구형 오버레이 수집 지원
+            var overlay = document.getElementById('nfcUserSelectModalOverlay');
+            if (overlay) {
+                var buttonsHtml = users.map(function(name) {
+                    return '<button type="button" onclick="selectMyNFCNameAndProceed(\'' + name + '\')" style="background:#ffffff; color:#0f172a; border:2px solid rgba(37,99,235,0.18); font-size:1.1rem; font-weight:800; padding:16px 12px; border-radius:16px; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.04); display:flex; align-items:center; justify-content:center; gap:6px;">👤 ' + name + '</button>';
+                }).join('');
+                var gridBox = overlay.querySelector('div[style*="grid-template-columns"]');
+                if (gridBox) gridBox.innerHTML = buttonsHtml;
+                overlay.style.display = 'flex';
+            }
+
+            if (typeof directOpenModal === 'function') directOpenModal('nfcUserSelectModal');
         }
         window.openNFCUserSelectModal = openNFCUserSelectModal;
 
