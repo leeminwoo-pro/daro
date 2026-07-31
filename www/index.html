@@ -8993,14 +8993,60 @@
         }
         window.directDeleteUserRoleFromAdmin = directDeleteUserRoleFromAdmin;
 
-        // 👥 [최고 관리자 전용 전체 팀원 관리표 실시간 렌더러 - Supabase Cloud DB 100% 직통 렌더링]
+        // 👥 [최고 관리자 전용 전체 팀원 관리표 실시간 렌더러 - 2단계 무적 렌더링 파이프라인]
         async function directRenderAdminUserRolesTable() {
             var container = document.getElementById('adminUserRoleList');
             if (!container) return;
 
             var rolesMap = {};
 
-            // ☁️ Supabase Cloud DB (user_credentials) REST API 무적 직통 긁어오기 (모바일과 100% 동일한 무적 수집)
+            // 1️⃣ 1단계: 메모리 상태 0.001초 동기식 즉시 수집 (빈화면 방지)
+            try {
+                var memRoles = (window.AppState && window.AppState.userRoles) ? window.AppState.userRoles : {};
+                Object.keys(memRoles).forEach(function(k) {
+                    if (memRoles[k] !== 'viewer' && k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주') {
+                        rolesMap[k.trim()] = memRoles[k];
+                    }
+                });
+            } catch(e){}
+
+            // UI 렌더링 헬퍼 함수
+            function renderUI(map) {
+                delete map['강연주'];
+                delete map['팀원'];
+                delete map['undefined'];
+                var users = Object.keys(map).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+                if (users.length === 0) return;
+                container.innerHTML = '';
+                users.forEach(function(uName) {
+                    var role = map[uName] || 'writer';
+                    var row = document.createElement('div');
+                    row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:10px 12px; border-radius:10px; border:1px solid rgba(15,23,42,0.1); margin-bottom:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);';
+                    
+                    var selectHtml = '<select onchange="directUpdateUserRoleFromAdmin(\'' + uName + '\', this.value)" style="padding:4px 8px; font-size:0.8rem; border-radius:6px; border:1px solid #cbd5e1; font-weight:700; background:#f8fafc; color:#0f172a;">' +
+                        '<option value="editor"' + (role === 'editor' || role === 'writer' ? ' selected' : '') + '>✏️ 작성자</option>' +
+                        '<option value="viewer"' + (role === 'viewer' ? ' selected' : '') + '>👁️ 뷰어</option>' +
+                        '<option value="admin"' + (role === 'admin' ? ' selected' : '') + '>👑 최고 관리자</option>' +
+                        '</select>';
+
+                    var delBtn = (uName === '이민우') ? '<span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">[기본 관리자]</span>' :
+                        '<button type="button" onclick="directDeleteUserRoleFromAdmin(\'' + uName + '\')" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer;">🗑️ 삭제</button>';
+
+                    row.innerHTML = '<div style="display:flex; align-items:center; gap:8px;">' +
+                                    '<strong style="font-size:0.9rem; color:#0f172a;">👤 ' + uName + '</strong>' +
+                                    '</div>' +
+                                    '<div style="display:flex; align-items:center; gap:8px;">' +
+                                    selectHtml +
+                                    delBtn +
+                                    '</div>';
+                    container.appendChild(row);
+                });
+            }
+
+            // 1차 렌더링 즉시 실행
+            renderUI(rolesMap);
+
+            // 2️⃣ 2단계: Supabase Cloud DB (user_credentials) REST API 무적 직통 비동기 수집 후 2차 100% 렌더링
             try {
                 var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
                 var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
@@ -9010,70 +9056,26 @@
                 if (fetchRes.ok) {
                     var dataList = await fetchRes.json();
                     if (dataList && dataList.length > 0) {
+                        var dbRolesMap = {};
                         dataList.forEach(function(r) {
                             var rRole = r.role || 'editor';
                             if (rRole === 'viewer') return; // 🚫 단순 뷰어 제외
                             var u = r.username || r.user_name || r.userName;
                             if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주') {
-                                rolesMap[u.trim()] = rRole;
+                                dbRolesMap[u.trim()] = rRole;
                             }
                         });
+                        if (Object.keys(dbRolesMap).length > 0) {
+                            rolesMap = dbRolesMap;
+                            if (!window.AppState) window.AppState = {};
+                            window.AppState.userRoles = rolesMap;
+                            try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(rolesMap)); } catch(e){}
+                            // 2차 렌더링 무적 갱신
+                            renderUI(rolesMap);
+                        }
                     }
                 }
             } catch(e){}
-
-            var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
-            if (sb) {
-                try {
-                    var res = await sb.from('user_credentials').select('*');
-                    if (res && res.data && res.data.length > 0) {
-                        res.data.forEach(function(r) {
-                            var rRole = r.role || 'editor';
-                            if (rRole === 'viewer') return; // 🚫 단순 뷰어 제외
-                            var u = r.username || r.user_name || r.userName;
-                            if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주') {
-                                rolesMap[u.trim()] = rRole;
-                            }
-                        });
-                    }
-                } catch(e){}
-            }
-
-            delete rolesMap['강연주'];
-            delete rolesMap['팀원'];
-            delete rolesMap['undefined'];
-
-            // 📱 AppState 및 localStorage도 Supabase DB와 100% 똑같이 동기화 세척
-            if (!window.AppState) window.AppState = {};
-            window.AppState.userRoles = rolesMap;
-            try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(rolesMap)); } catch(e){}
-
-            var users = Object.keys(rolesMap).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
-
-            container.innerHTML = '';
-            users.forEach(function(uName) {
-                var role = rolesMap[uName] || 'writer';
-                var row = document.createElement('div');
-                row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:10px 12px; border-radius:10px; border:1px solid rgba(15,23,42,0.1); margin-bottom:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);';
-                
-                var selectHtml = '<select onchange="directUpdateUserRoleFromAdmin(\'' + uName + '\', this.value)" style="padding:4px 8px; font-size:0.8rem; border-radius:6px; border:1px solid #cbd5e1; font-weight:700; background:#f8fafc; color:#0f172a;">' +
-                    '<option value="editor"' + (role === 'editor' || role === 'writer' ? ' selected' : '') + '>✏️ 작성자</option>' +
-                    '<option value="viewer"' + (role === 'viewer' ? ' selected' : '') + '>👁️ 뷰어</option>' +
-                    '<option value="admin"' + (role === 'admin' ? ' selected' : '') + '>👑 최고 관리자</option>' +
-                    '</select>';
-
-                var delBtn = (uName === '이민우') ? '<span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">[기본 관리자]</span>' :
-                    '<button type="button" onclick="directDeleteUserRoleFromAdmin(\'' + uName + '\')" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer;">🗑️ 삭제</button>';
-
-                row.innerHTML = '<div style="display:flex; align-items:center; gap:8px;">' +
-                                '<strong style="font-size:0.9rem; color:#0f172a;">👤 ' + uName + '</strong>' +
-                                '</div>' +
-                                '<div style="display:flex; align-items:center; gap:8px;">' +
-                                selectHtml +
-                                delBtn +
-                                '</div>';
-                container.appendChild(row);
-            });
         }
         window.directRenderAdminUserRolesTable = directRenderAdminUserRolesTable;
 
