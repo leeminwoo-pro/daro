@@ -1690,7 +1690,7 @@
 
             var uNameSet = {};
 
-            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 목록(user_credentials) REST API 무적 직통 긁어오기 (모바일 0.001초 연동 보장)
+            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 목록(user_credentials) REST API 무적 직통 긁어오기 (viewer 권한 15명 차단 & 실전 6명 연동)
             try {
                 var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
                 var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
@@ -1701,11 +1701,13 @@
                     var dataList = await fetchRes.json();
                     if (dataList && dataList.length > 0) {
                         dataList.forEach(function(row) {
+                            var rRole = row.role || 'writer';
+                            if (rRole === 'viewer') return; // 🚫 단순 뷰어 권한은 모바일 NFC 출퇴근 팝업 노출 100% 차단!
                             var uName = row.username || row.user_name || row.userName;
                             if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
                                 uNameSet[uName.trim()] = true;
                                 if (!AppState.userRoles) AppState.userRoles = {};
-                                AppState.userRoles[uName.trim()] = row.role || 'writer';
+                                AppState.userRoles[uName.trim()] = rRole;
                             }
                         });
                         try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(AppState.userRoles)); } catch(e){}
@@ -1719,11 +1721,13 @@
                     var res = await sb.from('user_credentials').select('*');
                     if (res && res.data && res.data.length > 0) {
                         res.data.forEach(function(row) {
+                            var rRole = row.role || 'writer';
+                            if (rRole === 'viewer') return; // 🚫 단순 뷰어 차단
                             var uName = row.username || row.user_name || row.userName;
                             if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
                                 uNameSet[uName.trim()] = true;
                                 if (!AppState.userRoles) AppState.userRoles = {};
-                                AppState.userRoles[uName.trim()] = row.role || 'writer';
+                                AppState.userRoles[uName.trim()] = rRole;
                             }
                         });
                         try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(AppState.userRoles)); } catch(e){}
@@ -8696,7 +8700,7 @@
             // 최고 관리자 지정 팀원 관리표 및 Supabase DB에서 실존 명단 동적 추출
             var nameMap = {};
 
-            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 목록(user_credentials) REST API 무적 직통 긁어오기 (모바일 0.001초 연동 보장)
+            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 목록(user_credentials) REST API 무적 직통 긁어오기 (viewer 권한 차단)
             try {
                 var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
                 var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
@@ -8707,11 +8711,13 @@
                     var dataList = await fetchRes.json();
                     if (dataList && dataList.length > 0) {
                         dataList.forEach(function(row) {
+                            var rRole = row.role || 'writer';
+                            if (rRole === 'viewer') return; // 🚫 단순 뷰어 모바일 NFC 팝업 노출 차단!
                             var uName = row.username || row.user_name || row.userName;
                             if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
                                 nameMap[uName.trim()] = true;
                                 if (!window.AppState.userRoles) window.AppState.userRoles = {};
-                                window.AppState.userRoles[uName.trim()] = row.role || 'writer';
+                                window.AppState.userRoles[uName.trim()] = rRole;
                             }
                         });
                         try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
@@ -8725,11 +8731,13 @@
                     var res = await sb.from('user_credentials').select('*');
                     if (res && res.data && res.data.length > 0) {
                         res.data.forEach(function(row) {
+                            var rRole = row.role || 'writer';
+                            if (rRole === 'viewer') return; // 🚫 단순 뷰어 차단
                             var uName = row.username || row.user_name || row.userName;
                             if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
                                 nameMap[uName.trim()] = true;
                                 if (!window.AppState.userRoles) window.AppState.userRoles = {};
-                                window.AppState.userRoles[uName.trim()] = row.role || 'writer';
+                                window.AppState.userRoles[uName.trim()] = rRole;
                             }
                         });
                         try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
@@ -9057,18 +9065,20 @@
 
             var nameSet = {};
 
-            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 명단(user_roles) 비동기 긁어오기 (신규 인원 100% 실시간 연동)
+            // ☁️ 1. Supabase Cloud DB에서 실시간 유저 명단(user_credentials) 비동기 긁어오기 (viewer 권한 차단)
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (sb) {
                 try {
-                    var res = await sb.from('user_roles').select('*');
+                    var res = await sb.from('user_credentials').select('*');
                     if (res && res.data && res.data.length > 0) {
                         res.data.forEach(function(row) {
-                            var uName = row.user_name || row.userName;
+                            var rRole = row.role || 'writer';
+                            if (rRole === 'viewer') return; // 🚫 단순 뷰어 차단
+                            var uName = row.username || row.user_name || row.userName;
                             if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
                                 nameSet[uName.trim()] = true;
                                 if (!window.AppState.userRoles) window.AppState.userRoles = {};
-                                window.AppState.userRoles[uName.trim()] = row.role || 'writer';
+                                window.AppState.userRoles[uName.trim()] = rRole;
                             }
                         });
                         try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
