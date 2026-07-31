@@ -50,6 +50,38 @@
             convertTargetIdeaId: null
         };
 
+        // 🏃‍♂️ [URL 파라미터 nfc_tag 자동 감지기 (모바일 NFC 초슬림 뷰 1초 자동 오픈)]
+        function initNfcTagUrlAutoScan() {
+            try {
+                var urlParams = new URLSearchParams(window.location.search);
+                var tagCode = urlParams.get('nfc_tag') || urlParams.get('tag') || urlParams.get('nfc_code');
+                
+                if (tagCode) {
+                    document.body.classList.add('nfc-slim-active');
+                    window.pendingNfcTagCode = tagCode;
+
+                    var checkInterval = setInterval(function() {
+                        if (typeof openNFCUserSelectModal === 'function') {
+                            clearInterval(checkInterval);
+                            openNFCUserSelectModal(function(selectedName) {
+                                if (typeof directProcessNFCTagClockIn === 'function') {
+                                    directProcessNFCTagClockIn(tagCode, selectedName);
+                                }
+                            });
+                        }
+                    }, 50);
+
+                    setTimeout(function() { clearInterval(checkInterval); }, 4000);
+                }
+            } catch (e) {}
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initNfcTagUrlAutoScan);
+        } else {
+            setTimeout(initNfcTagUrlAutoScan, 50);
+        }
+
         // 🎵 Web Audio API 기반 0.001초 무적 네이티브 사운드 뱅크
         var audioCtx = null;
         function getAudioContext() {
