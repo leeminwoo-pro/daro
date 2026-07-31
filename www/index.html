@@ -7789,9 +7789,9 @@
                         style="width: 100%; padding: 8px 12px; font-size: 0.88rem; background: #ffffff; color: #0f172a; border: 1px solid rgba(15,23,42,0.2); border-radius: 8px; font-weight: 600;">
                 </div>
 
-                <!-- 전체 팀원 원터치 관리표 목록 -->
+                <!-- 전체 팀원 원터치 관리표 목록 (최대 420px 시원한 트인 레이아웃) -->
                 <div id="adminUserRoleList"
-                    style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-right: 4px;">
+                    style="max-height: 420px; min-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-right: 4px;">
                 </div>
             </div>
 
@@ -9012,13 +9012,18 @@
 
             // UI 렌더링 헬퍼 함수
             function renderUI(map) {
+                var searchInput = document.getElementById('adminUserTargetName');
+                var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
                 delete map['강연주'];
                 delete map['팀원'];
                 delete map['undefined'];
+
                 var users = Object.keys(map).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
                 if (users.length === 0) return;
                 container.innerHTML = '';
                 users.forEach(function(uName) {
+                    if (query && uName.toLowerCase().indexOf(query) === -1) return; // 🔍 실시간 성함 검색어 필터링 적용
                     var role = map[uName] || 'writer';
                     var row = document.createElement('div');
                     row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:10px 12px; border-radius:10px; border:1px solid rgba(15,23,42,0.1); margin-bottom:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);';
