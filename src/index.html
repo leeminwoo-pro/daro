@@ -8893,14 +8893,43 @@
                 return false;
             }
 
-            // ☁️ Step 1. Supabase Cloud DB (user_roles 테이블) 최우선 선저장 (Master DB)
+            // ☁️ Step 1. Supabase Cloud DB (user_credentials 테이블) 최우선 선저장 (Master DB)
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
-            if (sb) {
-                try {
-                    await sb.from('user_roles').upsert([{
+            var encPass = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'; // 디폴트 해시 (1234)
+            try {
+                if (typeof CryptoUtils !== 'undefined' && CryptoUtils.sha256) {
+                    encPass = await CryptoUtils.sha256(passcode || '1234');
+                }
+            } catch(e){}
+
+            // REST API 무적 직통 등록 샷
+            try {
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials', {
+                    method: 'POST',
+                    headers: {
+                        'apikey': restKey,
+                        'Authorization': 'Bearer ' + restKey,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'resolution=merge-duplicates'
+                    },
+                    body: JSON.stringify({
+                        username: userName,
                         user_name: userName,
                         role: role,
-                        passcode: passcode,
+                        encrypted_passcode: encPass,
+                        updated_at: new Date().toISOString()
+                    })
+                });
+            } catch(e){}
+
+            if (sb) {
+                try {
+                    await sb.from('user_credentials').upsert([{
+                        username: userName,
+                        user_name: userName,
+                        role: role,
+                        encrypted_passcode: encPass,
                         updated_at: new Date().toISOString()
                     }]);
                 } catch(e){}
@@ -8926,7 +8955,7 @@
             if (typeof directRenderAdminUserRolesTable === 'function') await directRenderAdminUserRolesTable();
             if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
 
-            alert("🎉 [신규 팀원 사전 등록 성공!]\n\n👤 '" + userName + "' 님 (권한: " + (role === 'admin' ? '👑 최고 관리자' : (role === 'viewer' ? '👁️ 뷰어' : '✏️ 작성자')) + ")이 구글 클라우드 DB에 최우선 선저장되어 팀원 목록에 실시간 탑재되었습니다!");
+            alert("🎉 [신규 팀원 사전 등록 성공!]\n\n👤 '" + userName + "' 님 (권한: " + (role === 'admin' ? '👑 최고 관리자' : (role === 'viewer' ? '👁️ 뷰어' : '✏️ 작성자')) + ")이 구글 클라우드 DB(user_credentials)에 최우선 선저장되어 실시간 탑재되었습니다!");
             return false;
         }
         window.directAddNewUserFromAdmin = directAddNewUserFromAdmin;
@@ -8935,15 +8964,30 @@
         async function directUpdateUserRoleFromAdmin(targetName, newRole) {
             if (!targetName) return;
 
-            // ☁️ Step 1. Supabase DB 최우선 선수정
+            // ☁️ Step 1. Supabase Cloud DB (user_credentials) 최우선 선수정
+            try {
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?username=eq.' + encodeURIComponent(targetName), {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': restKey,
+                        'Authorization': 'Bearer ' + restKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        role: newRole,
+                        updated_at: new Date().toISOString()
+                    })
+                });
+            } catch(e){}
+
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (sb) {
                 try {
-                    await sb.from('user_roles').upsert([{
-                        user_name: targetName,
+                    await sb.from('user_credentials').update({
                         role: newRole,
                         updated_at: new Date().toISOString()
-                    }]);
+                    }).eq('username', targetName);
                 } catch(e){}
             }
 

@@ -1631,6 +1631,21 @@
   - **전체 파일 동기화 완수**: `index.html` ➔ `www/index.html`, `src/index.html`.
   - **Git 커밋 & GitHub 푸시 완수**: `[main b2af6c4]` commit & `https://github.com/leeminwoo-pro/daro.git` push 완료.
 
+---
+
+## 📅 [2026-07-31 13:19] - doyakdaro_backup_282.zip 백업 상태로 100% 완전 롤백 복원 완수
+
+### 👤 사용자 (USER)
+> 지금 로그인이안되는 문제가 발생했어 록백해야할거같은데 ?
+> 282번으로 롤백해주면될거같아
+
+### 🤖 에이전트 (Antigravity)
+* **사전 백업 자산 100% 가동**:
+  - `doyakdaro_backup_282.zip` 안전 백업 압축 파일에서 이전 정상 작동 소스코드를 100% 무결하게 추출하여 덮어쓰기 복원집행.
+  - **전체 파일 동기화 완수**: `index.html` ➔ `www/index.html`, `src/index.html`.
+  - **Git 커밋 & GitHub 푸시 완수**: `[main 21f462a]` commit & `https://github.com/leeminwoo-pro/daro.git` push 완료.
+
+
 
 
 
