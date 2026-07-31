@@ -1736,9 +1736,9 @@
                 return a.localeCompare(b, 'ko');
             });
 
-            // 🛡️ 만약 아직 등록팀원이 0명이면 등록된 5명('이민우', '박병주', '김진홍', '김일섭', '황지환') 기본 노출 보장
-            if (teamNames.length === 0 || (teamNames.length === 1 && teamNames[0] === '이민우')) {
-                ['이민우', '박병주', '김진홍', '김일섭', '황지환'].forEach(function(n){ uNameSet[n] = true; });
+            // 🛡️ 만약 클라우드 DB에 팀원이 0명이면 최소 디폴트 명단 보장
+            if (teamNames.length === 0) {
+                ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n){ uNameSet[n] = true; });
                 teamNames = Object.keys(uNameSet).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
             }
 
@@ -8702,9 +8702,9 @@
             
             var users = Object.keys(nameMap).filter(Boolean).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
             
-            // 🛡️ 만약 아직 등록팀원이 0명이거나 1명이면 등록된 5명('이민우', '박병주', '김진홍', '김일섭', '황지환') 기본 노출 보장
-            if (users.length === 0 || (users.length === 1 && users[0] === '이민우')) {
-                ['이민우', '박병주', '김진홍', '김일섭', '황지환'].forEach(function(n){ nameMap[n] = true; });
+            // 🛡️ 만약 클라우드 DB에 팀원이 0명이면 최소 디폴트 명단 보장
+            if (users.length === 0) {
+                ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n){ nameMap[n] = true; });
                 users = Object.keys(nameMap).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
             }
 
@@ -8958,11 +8958,11 @@
                 });
             } catch(e){}
 
-            // 🔄 [PC 명단 5명 Supabase Cloud DB 자동 100% 동기화 엔진 (황지환 님 등 5명 전원 클라우드 전송 보장)]
+            // 🔄 [신규 팀원 무제한 Supabase Cloud DB 자동 100% 동기화 엔진 ('전세계' 님 포함 무제한 수집 전송)]
             if (typeof syncAllUserRolesToSupabase === 'function') syncAllUserRolesToSupabase();
 
-            // 기본 5명 보장
-            ['이민우', '박병주', '김진홍', '김일섭', '황지환'].forEach(function(n) {
+            // 기본 필수 4명 디폴트 보장
+            ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n) {
                 if (!rolesMap[n]) rolesMap[n] = (n === '이민우' ? 'admin' : 'writer');
             });
 
@@ -9057,9 +9057,9 @@
                 return a.localeCompare(b, 'ko');
             });
 
-            // 🛡️ [버그 차단 핵심!] 5명('이민우', '박병주', '김진홍', '김일섭', '황지환') 기본 노출 보장 및 수파베이스 DB 자동 전송
-            if (users.length === 0 || (users.length === 1 && users[0] === '이민우')) {
-                ['이민우', '박병주', '김진홍', '김일섭', '황지환'].forEach(function(n){ nameSet[n] = true; });
+            // 🛡️ [버그 차단 핵심!] 팀원이 0명일 때만 최소 4명 디폴트 노출 보장
+            if (users.length === 0) {
+                ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n){ nameSet[n] = true; });
                 users = Object.keys(nameSet).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
             }
 
@@ -9082,34 +9082,53 @@
         }
         window.populateAdminUserSelect = populateAdminUserSelect;
 
-        // 🔄 [PC 명단 5명 Supabase Cloud DB 자동 100% 동기화 엔진 (황지환 님 등 5명 전원 클라우드 전송 보장)]
+        // 🔄 [신규 인원 무제한 동적 Supabase Cloud DB 자동 100% 동기화 엔진 ('전세계' 님 포함 무제한 인원 연동)]
         async function syncAllUserRolesToSupabase() {
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (!sb) return;
 
-            var targetUsers = ['이민우', '박병주', '김진홍', '김일섭', '황지환'];
+            var userMap = {};
+            // 디폴트 필수 4명 기본 포함
+            ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n){ userMap[n] = (n === '이민우' ? 'admin' : 'editor'); });
+
+            // 1. AppState 메모리 등록 인원 전체 동적 수집
+            try {
+                if (window.AppState && window.AppState.userRoles && typeof window.AppState.userRoles === 'object') {
+                    Object.keys(window.AppState.userRoles).forEach(function(k) {
+                        if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
+                            userMap[k.trim()] = window.AppState.userRoles[k] || 'editor';
+                        }
+                    });
+                }
+            } catch(e){}
+
+            // 2. localStorage 보관 팀원 전원 수집 ('전세계' 님 포함 신규 인원 무제한 동적 긁기)
             try {
                 var localObj = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
                 Object.keys(localObj).forEach(function(k) {
-                    if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주') {
-                        if (targetUsers.indexOf(k.trim()) === -1) targetUsers.push(k.trim());
+                    if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
+                        userMap[k.trim()] = localObj[k] || 'editor';
                     }
                 });
             } catch(e){}
 
-            var payload = targetUsers.map(function(uName) {
-                var role = 'editor';
-                if (uName === '이민우') role = 'admin';
+            delete userMap['강연주'];
+            delete userMap['팀원'];
+            delete userMap['undefined'];
+
+            var payload = Object.keys(userMap).map(function(uName) {
                 return {
                     user_name: uName,
-                    role: role,
+                    role: userMap[uName] || 'editor',
                     updated_at: new Date().toISOString()
                 };
             });
 
-            try {
-                await sb.from('user_roles').upsert(payload);
-            } catch(e){}
+            if (payload.length > 0) {
+                try {
+                    await sb.from('user_roles').upsert(payload);
+                } catch(e){}
+            }
         }
         window.syncAllUserRolesToSupabase = syncAllUserRolesToSupabase;
 
