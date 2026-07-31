@@ -8819,7 +8819,7 @@
         }
         window.directPushToSupabaseRestAPI = directPushToSupabaseRestAPI;
 
-        // 👥 [최고 관리자 전용 신규 팀원 0.1초 사전 등록 & Supabase Cloud DB 실시간 전송 엔진]
+        // 👥 [최고 관리자 전용 신규 팀원 0.1초 사전 등록 - Supabase DB 선저장 ➔ 로컬/화면 반영 정석 파이프라인]
         async function directAddNewUserFromAdmin() {
             var nameInput = document.getElementById('adminAddUserNameInput');
             var passInput = document.getElementById('adminAddUserPasscodeInput');
@@ -8838,18 +8838,7 @@
                 return false;
             }
 
-            if (!window.AppState.userRoles) window.AppState.userRoles = {};
-            window.AppState.userRoles[userName] = role;
-            try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
-
-            if (passcode) {
-                var passMap = {};
-                try { passMap = JSON.parse(localStorage.getItem('doyakdaro_user_passcodes') || '{}'); } catch(e){}
-                passMap[userName] = passcode;
-                try { localStorage.setItem('doyakdaro_user_passcodes', JSON.stringify(passMap)); } catch(e){}
-            }
-
-            // ☁️ Supabase Cloud DB (user_roles 테이블)로 0.1초 실시간 전송 (모바일 신규 인원 미친 실시간 연동)
+            // ☁️ Step 1. Supabase Cloud DB (user_roles 테이블) 최우선 선저장 (Master DB)
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (sb) {
                 try {
@@ -8862,17 +8851,150 @@
                 } catch(e){}
             }
 
+            // 📱 Step 2. DB 선저장 완료 후 로컬스토리지 및 AppState 메모리 동기화 갱신
+            if (!window.AppState.userRoles) window.AppState.userRoles = {};
+            window.AppState.userRoles[userName] = role;
+            try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
+
+            if (passcode) {
+                var passMap = {};
+                try { passMap = JSON.parse(localStorage.getItem('doyakdaro_user_passcodes') || '{}'); } catch(e){}
+                passMap[userName] = passcode;
+                try { localStorage.setItem('doyakdaro_user_passcodes', JSON.stringify(passMap)); } catch(e){}
+            }
+
             if (nameInput) nameInput.value = '';
             if (passInput) passInput.value = '';
 
-            if (typeof populateAdminUserSelect === 'function') populateAdminUserSelect();
-            if (typeof directRenderAdminUserRolesTable === 'function') directRenderAdminUserRolesTable();
+            // 💻 Step 3. 화면 UI 렌더링 갱신
+            if (typeof populateAdminUserSelect === 'function') await populateAdminUserSelect();
+            if (typeof directRenderAdminUserRolesTable === 'function') await directRenderAdminUserRolesTable();
             if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
 
-            alert("🎉 [신규 팀원 사전 등록 성공!]\n\n👤 '" + userName + "' 님 (권한: " + (role === 'admin' ? '👑 최고 관리자' : (role === 'viewer' ? '👁️ 뷰어' : '✏️ 작성자')) + ")이 구글 클라우드 DB 및 팀원 목록에 실시간 탑재되었습니다!");
+            alert("🎉 [신규 팀원 사전 등록 성공!]\n\n👤 '" + userName + "' 님 (권한: " + (role === 'admin' ? '👑 최고 관리자' : (role === 'viewer' ? '👁️ 뷰어' : '✏️ 작성자')) + ")이 구글 클라우드 DB에 최우선 선저장되어 팀원 목록에 실시간 탑재되었습니다!");
             return false;
         }
         window.directAddNewUserFromAdmin = directAddNewUserFromAdmin;
+
+        // ✏️ [팀원 권한 수정 엔진 - Supabase DB 선반영 ➔ 로컬/화면 갱신 파이프라인]
+        async function directUpdateUserRoleFromAdmin(targetName, newRole) {
+            if (!targetName) return;
+
+            // ☁️ Step 1. Supabase DB 최우선 선수정
+            var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+            if (sb) {
+                try {
+                    await sb.from('user_roles').upsert([{
+                        user_name: targetName,
+                        role: newRole,
+                        updated_at: new Date().toISOString()
+                    }]);
+                } catch(e){}
+            }
+
+            // 📱 Step 2. 로컬스토리지 & 메모리 동기화
+            if (!window.AppState.userRoles) window.AppState.userRoles = {};
+            window.AppState.userRoles[targetName] = newRole;
+            try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
+
+            // 💻 Step 3. UI 갱신
+            if (typeof populateAdminUserSelect === 'function') await populateAdminUserSelect();
+            if (typeof directRenderAdminUserRolesTable === 'function') await directRenderAdminUserRolesTable();
+        }
+        window.directUpdateUserRoleFromAdmin = directUpdateUserRoleFromAdmin;
+
+        // 🗑️ [팀원 삭제 엔진 - Supabase DB 선삭제 ➔ 로컬/화면 소멸 파이프라인]
+        async function directDeleteUserRoleFromAdmin(targetName) {
+            if (!targetName) return;
+            if (!confirm("⚠️ 정말로 팀원 '" + targetName + "' 님을 관리표에서 삭제하시겠습니까?\n(모바일 NFC 접속 목록에서도 즉시 삭제됩니다)")) return;
+
+            // ☁️ Step 1. Supabase DB 최우선 선삭제
+            var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+            if (sb) {
+                try {
+                    await sb.from('user_roles').delete().eq('user_name', targetName);
+                } catch(e){}
+            }
+
+            // 📱 Step 2. 로컬스토리지 & 메모리 소멸
+            if (window.AppState && window.AppState.userRoles) {
+                delete window.AppState.userRoles[targetName];
+                try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
+            }
+
+            // 💻 Step 3. UI 갱신
+            if (typeof populateAdminUserSelect === 'function') await populateAdminUserSelect();
+            if (typeof directRenderAdminUserRolesTable === 'function') await directRenderAdminUserRolesTable();
+
+            alert("🗑️ 팀원 '" + targetName + "' 님이 구글 클라우드 DB 및 전체 목록에서 완전 삭제되었습니다.");
+        }
+        window.directDeleteUserRoleFromAdmin = directDeleteUserRoleFromAdmin;
+
+        // 👥 [최고 관리자 전용 전체 팀원 관리표 실시간 렌더러]
+        async function directRenderAdminUserRolesTable() {
+            var container = document.getElementById('adminUserRoleList');
+            if (!container) return;
+
+            var rolesMap = {};
+            // Supabase DB에서 최신 데이터 조회
+            var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+            if (sb) {
+                try {
+                    var res = await sb.from('user_roles').select('*');
+                    if (res && res.data && res.data.length > 0) {
+                        res.data.forEach(function(r) {
+                            var u = r.user_name || r.userName;
+                            if (u && u.trim()) rolesMap[u.trim()] = r.role || 'writer';
+                        });
+                    }
+                } catch(e){}
+            }
+
+            // 로컬스토리지 백업 병합
+            try {
+                var localRoles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+                Object.keys(localRoles).forEach(function(k) {
+                    if (k && !rolesMap[k]) rolesMap[k] = localRoles[k];
+                });
+            } catch(e){}
+
+            // 기본 4명 보장
+            ['이민우', '박병주', '김진홍', '김일섭'].forEach(function(n) {
+                if (!rolesMap[n]) rolesMap[n] = (n === '이민우' ? 'admin' : 'writer');
+            });
+
+            delete rolesMap['강연주'];
+            delete rolesMap['팀원'];
+            delete rolesMap['undefined'];
+
+            var users = Object.keys(rolesMap).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+
+            container.innerHTML = '';
+            users.forEach(function(uName) {
+                var role = rolesMap[uName] || 'writer';
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:10px 12px; border-radius:10px; border:1px solid rgba(15,23,42,0.1); margin-bottom:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);';
+                
+                var selectHtml = '<select onchange="directUpdateUserRoleFromAdmin(\'' + uName + '\', this.value)" style="padding:4px 8px; font-size:0.8rem; border-radius:6px; border:1px solid #cbd5e1; font-weight:700; background:#f8fafc; color:#0f172a;">' +
+                    '<option value="editor"' + (role === 'editor' || role === 'writer' ? ' selected' : '') + '>✏️ 작성자</option>' +
+                    '<option value="viewer"' + (role === 'viewer' ? ' selected' : '') + '>👁️ 뷰어</option>' +
+                    '<option value="admin"' + (role === 'admin' ? ' selected' : '') + '>👑 최고 관리자</option>' +
+                    '</select>';
+
+                var delBtn = (uName === '이민우') ? '<span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">[기본 관리자]</span>' :
+                    '<button type="button" onclick="directDeleteUserRoleFromAdmin(\'' + uName + '\')" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer;">🗑️ 삭제</button>';
+
+                row.innerHTML = '<div style="display:flex; align-items:center; gap:8px;">' +
+                                '<strong style="font-size:0.9rem; color:#0f172a;">👤 ' + uName + '</strong>' +
+                                '</div>' +
+                                '<div style="display:flex; align-items:center; gap:8px;">' +
+                                selectHtml +
+                                delBtn +
+                                '</div>';
+                container.appendChild(row);
+            });
+        }
+        window.directRenderAdminUserRolesTable = directRenderAdminUserRolesTable;
 
         // 👥 [실제 등록 팀원 명단 100% 동적 추출 로더 - Supabase Cloud DB 0.001초 비동기 연동]
         async function populateAdminUserSelect() {
