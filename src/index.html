@@ -846,15 +846,19 @@
                 }
             }
 
-            // 1. 최고 관리자 제어판 [전체팀원 관리표] 등록 명단 100% 동적 집계 (과거 찌꺼기 레코드 제외)
+            // 1. 최고 관리자 제어판 [전체팀원 관리표] 등록 명단 100% 동적 집계 (localStorage & AppState 100% 최우선 실시간 병합)
             var uNameSet = {};
             try {
-                var rolesObj = AppState.userRoles;
-                if (!rolesObj) {
-                    rolesObj = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
-                }
-                if (rolesObj && typeof rolesObj === 'object') {
-                    Object.keys(rolesObj).forEach(function(n) {
+                var localRoles = {};
+                try { localRoles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {}; } catch(e){}
+                var memRoles = AppState.userRoles || {};
+                
+                // 최신 로컬스토리지와 메모리 상태 병합
+                var mergedRoles = Object.assign({}, localRoles, memRoles);
+                AppState.userRoles = mergedRoles;
+
+                if (mergedRoles && typeof mergedRoles === 'object') {
+                    Object.keys(mergedRoles).forEach(function(n) {
                         if (n && n.trim() && n.trim() !== '팀원' && n.trim() !== '강연주' && n.trim() !== 'undefined') {
                             uNameSet[n.trim()] = true;
                         }
@@ -5728,7 +5732,10 @@
             if (nameInput) nameInput.value = '';
             playSuccessSound();
             directRenderUserRoles();
-            alert('🎉 [팀원 사전 등록 완료]\n[' + pureName + '] 팀원이 수파베이스 클라우드 명단에 0.1초 만에 안전하게 전송 및 추가되었습니다!');
+            if (typeof directPopulateAdminUserDropdown === 'function') directPopulateAdminUserDropdown();
+            if (typeof populateAdminUserSelect === 'function') populateAdminUserSelect();
+            if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
+            alert('🎉 [팀원 사전 등록 완료]\n[' + pureName + '] 팀원이 등록되었습니다! 메인 현황판 및 근태 모달에 즉시 동기화 적용됩니다!');
         }
         window.directAddNewUserFromAdmin = directAddNewUserFromAdmin;
 
