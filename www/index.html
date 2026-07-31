@@ -1562,40 +1562,46 @@
                 document.body.appendChild(overlay);
             }
 
+            // 🎯 최고 관리자 제어판 [전체팀원 관리표] 실존 명단 100% 동적 수집 (하드코딩 완전 제거)
             var uNameSet = {};
-            if (AppState.currentUser && AppState.currentUser.fullName) {
+            
+            // 1. 최고 관리자 지정 팀원 권한 맵에서 실존 유저 수집
+            try {
+                var rolesObj = AppState.userRoles;
+                if (!rolesObj) {
+                    rolesObj = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+                }
+                if (rolesObj && typeof rolesObj === 'object') {
+                    Object.keys(rolesObj).forEach(function(n) {
+                        if (n && n.trim() && n.trim() !== '팀원' && n.trim() !== '강연주' && n.trim() !== 'undefined') {
+                            uNameSet[n.trim()] = true;
+                        }
+                    });
+                }
+            } catch(e){}
+
+            // 2. 현재 로그인 사용자 및 실존 출근 레코드 수집
+            if (AppState.currentUser && AppState.currentUser.fullName && AppState.currentUser.fullName.trim() !== '팀원') {
                 uNameSet[AppState.currentUser.fullName.trim()] = true;
-            }
-            if (AppState.userRoles) {
-                Object.keys(AppState.userRoles).forEach(function(n){ if(n && n.trim()) uNameSet[n.trim()] = true; });
             }
             if (AppState.attendanceRecords) {
                 AppState.attendanceRecords.forEach(function(r){
-                    if (r.userName && r.userName.trim()) uNameSet[r.userName.trim()] = true;
-                    if (r.userId && r.userId.trim()) uNameSet[r.userId.trim()] = true;
+                    if (r && r.userName && r.userName.trim() && r.userName.trim() !== '팀원') uNameSet[r.userName.trim()] = true;
                 });
             }
-            try {
-                var localAtt = JSON.parse(localStorage.getItem('doyakdaro_attendance_records')) || [];
-                localAtt.forEach(function(r){
-                    if (r && r.userName && r.userName.trim()) uNameSet[r.userName.trim()] = true;
-                    if (r && r.userId && r.userId.trim()) uNameSet[r.userId.trim()] = true;
-                });
-            } catch(e){}
-            if (AppState.schedules) {
-                AppState.schedules.forEach(function(s){
-                    if (s.author && s.author.trim()) uNameSet[s.author.trim()] = true;
-                    if (s.assignee && s.assignee.trim()) uNameSet[s.assignee.trim()] = true;
-                });
-            }
-            // 🎯 필수 전체 25명 팀원 마스터 보완
-            ['장보고', '허영주', '허병준', '윤정숙', '연정민', '심채연', '김일섭', '박민석', '전세계', '이민우', '김진홍', '박병주', '신주환', '강연주', '김태우', '이성재', '최지은', '정수빈', '한상우', '유재석', '조세호', '하동훈', '송지효', '김종국', '지석진'].forEach(function(n){
-                if(n) uNameSet[n.trim()] = true;
-            });
 
             var teamNames = Object.keys(uNameSet).filter(Boolean).sort(function(a, b) {
                 return a.localeCompare(b, 'ko');
             });
+
+            // 예비 세이프가드 (명단이 비었을 경우에만 기본 21명 마스터 자동 공급)
+            if (teamNames.length === 0) {
+                teamNames = [
+                    '장보고', '허영주', '허병준', '윤정숙', '연정민', '심채연', '김일섭', 
+                    '박민석', '전세계', '이민우', '김진홍', '박병주', '신주환', '김태우', 
+                    '이성재', '최지은', '정수빈', '한상우', '신범수', '박종원', '임채원'
+                ].sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+            }
 
             var buttonsHtml = teamNames.map(function(name) {
                 return '<button type="button" onclick="selectMyNFCNameAndProceed(\'' + name + '\')" style="background:#ffffff; color:#0f172a; border:2px solid rgba(37,99,235,0.18); font-size:1.1rem; font-weight:800; padding:16px 12px; border-radius:16px; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.04); display:flex; align-items:center; justify-content:center; gap:6px; transition:transform 0.1s, border-color 0.1s;" onmouseover="this.style.borderColor=\'#2563eb\'; this.style.color=\'#2563eb\';" onmouseout="this.style.borderColor=\'rgba(37,99,235,0.18)\'; this.style.color=\'#0f172a\';">👤 ' + name + '</button>';
