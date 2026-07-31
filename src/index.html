@@ -1901,7 +1901,7 @@
         }
         window.directManualClockToggle = directManualClockToggle;
 
-        // 👑 [최고 관리자 전용 특정 팀원 수동 근태 대리 제어 기능]
+        // 👑 [최고 관리자 전용 특정 팀원 수동 근태 대리 제어 기능 - 오직 전체팀원 관리표만 참조]
         function directPopulateAdminUserDropdown() {
             var selectEls = [
                 document.getElementById('adminTargetUserSelect'), 
@@ -1911,35 +1911,24 @@
             if (selectEls.length === 0) return;
 
             var uNameSet = {};
-            if (AppState.currentUser && AppState.currentUser.fullName) {
+            // 오직 최고 관리자 지정 전체팀원 관리표(userRoles)에서만 실존 유저 수집
+            try {
+                var roles = AppState.userRoles;
+                if (!roles) roles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+                if (roles && typeof roles === 'object') {
+                    Object.keys(roles).forEach(function(k) {
+                        if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
+                            uNameSet[k.trim()] = true;
+                        }
+                    });
+                }
+            } catch(e){}
+
+            if (AppState.currentUser && AppState.currentUser.fullName && AppState.currentUser.fullName.trim() !== '팀원') {
                 uNameSet[AppState.currentUser.fullName.trim()] = true;
             }
-            if (AppState.userRoles) {
-                Object.keys(AppState.userRoles).forEach(function(n){ if(n && n.trim()) uNameSet[n.trim()] = true; });
-            }
-            if (AppState.attendanceRecords) {
-                AppState.attendanceRecords.forEach(function(r){
-                    if (r.userName && r.userName.trim()) uNameSet[r.userName.trim()] = true;
-                    if (r.userId && r.userId.trim()) uNameSet[r.userId.trim()] = true;
-                });
-            }
-            try {
-                var localAtt = JSON.parse(localStorage.getItem('doyakdaro_attendance_records')) || [];
-                localAtt.forEach(function(r){
-                    if (r && r.userName && r.userName.trim()) uNameSet[r.userName.trim()] = true;
-                    if (r && r.userId && r.userId.trim()) uNameSet[r.userId.trim()] = true;
-                });
-            } catch(e){}
-            if (AppState.schedules) {
-                AppState.schedules.forEach(function(s){
-                    if (s.author && s.author.trim()) uNameSet[s.author.trim()] = true;
-                    if (s.assignee && s.assignee.trim()) uNameSet[s.assignee.trim()] = true;
-                });
-            }
-            // 🎯 필수 전체 팀원 목록 마스터 보완 (사진 속 21명 명단 100% 보장)
-            ['장보고', '허영주', '허병준', '윤정숙', '연정민', '심채연', '김일섭', '박민석', '전세계', '이민우', '김진홍', '박병주'].forEach(function(n){
-                if(n) uNameSet[n.trim()] = true;
-            });
+
+            if (Object.keys(uNameSet).length === 0) uNameSet['이민우'] = true;
 
             var names = Object.keys(uNameSet).filter(Boolean).sort(function(a, b) {
                 return a.localeCompare(b, 'ko');
