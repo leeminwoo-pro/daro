@@ -8993,94 +8993,82 @@
         }
         window.directDeleteUserRoleFromAdmin = directDeleteUserRoleFromAdmin;
 
-        // 👥 [최고 관리자 전용 전체 팀원 관리표 실시간 렌더러 - 2단계 무적 렌더링 파이프라인]
+        // 👥 [최고 관리자 전용 전체 팀원 관리표 실시간 렌더러 - Supabase Cloud DB Direct 100% 무적 HTML 렌더러]
         async function directRenderAdminUserRolesTable() {
             var container = document.getElementById('adminUserRoleList');
             if (!container) return;
 
             var rolesMap = {};
 
-            // 1️⃣ 1단계: 메모리 상태 0.001초 동기식 즉시 수집 (빈화면 방지)
-            try {
-                var memRoles = (window.AppState && window.AppState.userRoles) ? window.AppState.userRoles : {};
-                Object.keys(memRoles).forEach(function(k) {
-                    if (memRoles[k] !== 'viewer' && k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주') {
-                        rolesMap[k.trim()] = memRoles[k];
-                    }
-                });
-            } catch(e){}
-
-            // UI 렌더링 헬퍼 함수
-            function renderUI(map) {
-                var searchInput = document.getElementById('adminUserTargetName');
-                var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
-                delete map['강연주'];
-                delete map['팀원'];
-                delete map['undefined'];
-
-                var users = Object.keys(map).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
-                if (users.length === 0) return;
-                container.innerHTML = '';
-                users.forEach(function(uName) {
-                    if (query && uName.toLowerCase().indexOf(query) === -1) return; // 🔍 실시간 성함 검색어 필터링 적용
-                    var role = map[uName] || 'writer';
-                    var row = document.createElement('div');
-                    row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:10px 12px; border-radius:10px; border:1px solid rgba(15,23,42,0.1); margin-bottom:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);';
-                    
-                    var selectHtml = '<select onchange="directUpdateUserRoleFromAdmin(\'' + uName + '\', this.value)" style="padding:4px 8px; font-size:0.8rem; border-radius:6px; border:1px solid #cbd5e1; font-weight:700; background:#f8fafc; color:#0f172a;">' +
-                        '<option value="editor"' + (role === 'editor' || role === 'writer' ? ' selected' : '') + '>✏️ 작성자</option>' +
-                        '<option value="viewer"' + (role === 'viewer' ? ' selected' : '') + '>👁️ 뷰어</option>' +
-                        '<option value="admin"' + (role === 'admin' ? ' selected' : '') + '>👑 최고 관리자</option>' +
-                        '</select>';
-
-                    var delBtn = (uName === '이민우') ? '<span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">[기본 관리자]</span>' :
-                        '<button type="button" onclick="directDeleteUserRoleFromAdmin(\'' + uName + '\')" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer;">🗑️ 삭제</button>';
-
-                    row.innerHTML = '<div style="display:flex; align-items:center; gap:8px;">' +
-                                    '<strong style="font-size:0.9rem; color:#0f172a;">👤 ' + uName + '</strong>' +
-                                    '</div>' +
-                                    '<div style="display:flex; align-items:center; gap:8px;">' +
-                                    selectHtml +
-                                    delBtn +
-                                    '</div>';
-                    container.appendChild(row);
-                });
-            }
-
-            // 1차 렌더링 즉시 실행
-            renderUI(rolesMap);
-
-            // 2️⃣ 2단계: Supabase Cloud DB (user_credentials) REST API 무적 직통 비동기 수집 후 2차 100% 렌더링
+            // ☁️ Step 1. Supabase Cloud DB (user_credentials) REST API 무적 직통 긁어오기 (모바일 0.001초 직통과 100% 동일)
             try {
                 var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
                 var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
-                var fetchRes = await fetch(restUrl, {
+                var res = await fetch(restUrl, {
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
                 });
-                if (fetchRes.ok) {
-                    var dataList = await fetchRes.json();
-                    if (dataList && dataList.length > 0) {
-                        var dbRolesMap = {};
-                        dataList.forEach(function(r) {
-                            var rRole = r.role || 'editor';
-                            if (rRole === 'viewer') return; // 🚫 단순 뷰어 제외
-                            var u = r.username || r.user_name || r.userName;
-                            if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주') {
-                                dbRolesMap[u.trim()] = rRole;
+                if (res.ok) {
+                    var list = await res.json();
+                    if (list && list.length > 0) {
+                        list.forEach(function(row) {
+                            var u = row.username || row.user_name || row.userName;
+                            if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주' && u.trim() !== 'undefined') {
+                                rolesMap[u.trim()] = row.role || 'editor';
                             }
                         });
-                        if (Object.keys(dbRolesMap).length > 0) {
-                            rolesMap = dbRolesMap;
-                            if (!window.AppState) window.AppState = {};
-                            window.AppState.userRoles = rolesMap;
-                            try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(rolesMap)); } catch(e){}
-                            // 2차 렌더링 무적 갱신
-                            renderUI(rolesMap);
-                        }
                     }
                 }
             } catch(e){}
+
+            // 📱 Step 2. 만약 DB 통신에 성공하지 못했을 때만 백업 메모리 수집
+            if (Object.keys(rolesMap).length === 0 && window.AppState && window.AppState.userRoles) {
+                Object.keys(window.AppState.userRoles).forEach(function(k) {
+                    if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
+                        rolesMap[k.trim()] = window.AppState.userRoles[k] || 'editor';
+                    }
+                });
+            }
+
+            delete rolesMap['강연주'];
+            delete rolesMap['팀원'];
+            delete rolesMap['undefined'];
+
+            if (!window.AppState) window.AppState = {};
+            window.AppState.userRoles = rolesMap;
+            try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(rolesMap)); } catch(e){}
+
+            var searchInput = document.getElementById('adminUserTargetName');
+            var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            var users = Object.keys(rolesMap).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+
+            // 🛡️ Step 3. 100% 무적 HTML 생성 및 직통 주입
+            var html = '';
+            users.forEach(function(uName) {
+                if (query && uName.toLowerCase().indexOf(query) === -1) return;
+                var role = rolesMap[uName] || 'editor';
+                var selectHtml = '<select onchange="directUpdateUserRoleFromAdmin(\'' + uName + '\', this.value)" style="padding:4px 8px; font-size:0.8rem; border-radius:6px; border:1px solid #cbd5e1; font-weight:700; background:#f8fafc; color:#0f172a;">' +
+                    '<option value="editor"' + (role === 'editor' || role === 'writer' ? ' selected' : '') + '>✏️ 작성자</option>' +
+                    '<option value="viewer"' + (role === 'viewer' ? ' selected' : '') + '>👁️ 뷰어</option>' +
+                    '<option value="admin"' + (role === 'admin' ? ' selected' : '') + '>👑 최고 관리자</option>' +
+                    '</select>';
+
+                var delBtn = (uName === '이민우') ? '<span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">[기본 관리자]</span>' :
+                    '<button type="button" onclick="directDeleteUserRoleFromAdmin(\'' + uName + '\')" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer;">🗑️ 삭제</button>';
+
+                html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:10px 12px; border-radius:10px; border:1px solid rgba(15,23,42,0.1); margin-bottom:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">' +
+                        '<div style="display:flex; align-items:center; gap:8px;">' +
+                        '<strong style="font-size:0.9rem; color:#0f172a;">👤 ' + uName + '</strong>' +
+                        '</div>' +
+                        '<div style="display:flex; align-items:center; gap:8px;">' +
+                        selectHtml +
+                        delBtn +
+                        '</div></div>';
+            });
+
+            if (!html) {
+                html = '<div style="font-size:0.82rem; color:#94a3b8; text-align:center; padding:16px 0;">등록된 팀원이 없습니다. 위에서 사전 등록해 주세요!</div>';
+            }
+            container.innerHTML = html;
         }
         window.directRenderAdminUserRolesTable = directRenderAdminUserRolesTable;
 
