@@ -1,4 +1,4 @@
-// =================================================================
+﻿// =================================================================
 // 도약다로 v17.0 Live - 한글 이름 원터치 3초 간편 공유 앱 (app.js)
 // 구글 데이터센터 24시간 실시간 스마트폰 동기화 연동
 // 작성일: 2026-07-21
@@ -8,7 +8,7 @@
 // 1. 구글 무료 클라우드 데이터센터 (Supabase) 라이브 연동 정보
 // -----------------------------------------------------------------
 const SUPABASE_URL = 'https://fhwqaixpxffnapmqvvdy.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
 
 // Supabase 클라이언트 SDK 초기화
 let supabase = null;
@@ -1780,7 +1780,7 @@ async function directPurgeAllCloudLegacyData() {
 
     try {
         var url = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/attendance_records?id=neq.NEVER_MATCH_SAFE_ID';
-        var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+        var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
         fetch(url, { method: 'DELETE', headers: { 'apikey': key, 'Authorization': 'Bearer ' + key } });
     } catch(e){}
 

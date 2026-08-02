@@ -321,7 +321,51 @@
         }
         window.directToggleNFCAttendanceFeature = directToggleNFCAttendanceFeature;
 
-        // 🏷️ 진품 NFC 스티커 태그 목록 초기화 및 렌더링 무적 엔진
+        // 🏷️ 진품 NFC 스티커 태그 목록 초기화 및 Supabase Cloud DB 직통 갱신 무적 엔진
+        async function fetchValidNfcTagsFromCloud() {
+            try {
+                var apiKey = (typeof SUPABASE_KEY !== 'undefined' && SUPABASE_KEY) ? SUPABASE_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var res = await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/nfc_tags?select=*', {
+                    headers: { 'apikey': apiKey, 'Authorization': 'Bearer ' + apiKey }
+                });
+                if (res.ok) {
+                    var list = await res.json();
+                    if (list && Array.isArray(list) && list.length > 0) {
+                        AppState.validNfcTags = list.map(function(t) {
+                            return {
+                                tag_code: t.tag_code,
+                                tag_uid: t.tag_uid,
+                                location_name: t.location_name || t.locationName || '🏢 본사',
+                                is_active: t.is_active !== false
+                            };
+                        });
+                        try { localStorage.setItem('doyakdaro_valid_nfc_tags', JSON.stringify(AppState.validNfcTags)); } catch (e) { }
+                        return AppState.validNfcTags;
+                    }
+                }
+            } catch (e1) { }
+
+            if (window.supabaseClient) {
+                try {
+                    var sdkRes = await window.supabaseClient.from('nfc_tags').select('*');
+                    if (sdkRes && sdkRes.data && sdkRes.data.length > 0) {
+                        AppState.validNfcTags = sdkRes.data.map(function(t) {
+                            return {
+                                tag_code: t.tag_code,
+                                tag_uid: t.tag_uid,
+                                location_name: t.location_name || t.locationName || '🏢 본사',
+                                is_active: t.is_active !== false
+                            };
+                        });
+                        try { localStorage.setItem('doyakdaro_valid_nfc_tags', JSON.stringify(AppState.validNfcTags)); } catch (e) { }
+                        return AppState.validNfcTags;
+                    }
+                } catch (e2) { }
+            }
+            return getValidNfcTagsList();
+        }
+        window.fetchValidNfcTagsFromCloud = fetchValidNfcTagsFromCloud;
+
         function getValidNfcTagsList() {
             if (!AppState.validNfcTags || !Array.isArray(AppState.validNfcTags) || AppState.validNfcTags.length === 0) {
                 try {
@@ -712,7 +756,7 @@
 
             try {
                 var url = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/attendance_records?id=neq.NEVER_MATCH_SAFE_ID';
-                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
                 fetch(url, { method: 'DELETE', headers: { 'apikey': key, 'Authorization': 'Bearer ' + key } });
             } catch(e){}
 
@@ -1522,18 +1566,36 @@
                 return false;
             }
 
-            var defaultTargetUid = '04:A2:8F:B2:1C:60:80';
-            var actualUid = tagUid || defaultTargetUid;
-            var validTags = (typeof getValidNfcTagsList === 'function') ? getValidNfcTagsList() : (AppState.validNfcTags || []);
-            var targetCode = tagCode || 'DOYAK_NFC_OFFICE_MAIN_2026';
+            try {
+                if (typeof fetchValidNfcTagsFromCloud === 'function') {
+                    await fetchValidNfcTagsFromCloud();
+                }
+            } catch(e) {}
 
-            var matchedTag = validTags.find(function (t) { return t.tag_code === targetCode; });
-            if (matchedTag && matchedTag.tag_uid) {
-                if (actualUid !== matchedTag.tag_uid) {
+            var validTags = (typeof getValidNfcTagsList === 'function') ? getValidNfcTagsList() : (AppState.validNfcTags || []);
+
+            // 🎯 태그 코드 및 물리 UID 정밀 대조로 해당 장소 스티커 매칭!
+            var matchedTag = null;
+            if (tagCode || tagUid) {
+                matchedTag = validTags.find(function (t) {
+                    if (!t) return false;
+                    var cMatch = tagCode && (t.tag_code === tagCode || tagCode.indexOf(t.tag_code) !== -1);
+                    var uMatch = tagUid && (t.tag_uid === tagUid || (typeof t.tag_uid === 'string' && t.tag_uid.toLowerCase() === String(tagUid).toLowerCase()));
+                    return cMatch || uMatch;
+                });
+            }
+            if (!matchedTag && validTags.length > 0) {
+                matchedTag = validTags[0];
+            }
+
+            if (matchedTag && matchedTag.tag_uid && tagUid) {
+                if (String(tagUid).toLowerCase() !== String(matchedTag.tag_uid).toLowerCase()) {
                     alert("❌ [복제 태그 차단] 등록되지 않은 복제/개인 NFC 스티커입니다! (사무실 진품 물리 UID 불일치)");
                     return false;
                 }
             }
+
+            var locationName = matchedTag ? (matchedTag.location_name || '🏢 본사') : '🏢 본사';
 
             var savedMyName = null;
             try { savedMyName = localStorage.getItem('doyakdaro_nfc_my_name'); } catch(e){}
@@ -1568,6 +1630,8 @@
                     clockOut: null,
                     totalHours: 0,
                     status: 'WORKING',
+                    locationName: locationName,
+                    checkInType: 'NFC',
                     nfcTagged: true
                 };
 
@@ -1589,13 +1653,15 @@
                             work_date: todayStr,
                             clock_in: nowIso,
                             status: 'WORKING',
+                            location_name: locationName,
+                            check_in_type: 'NFC',
                             nfc_tagged: true
                         }]);
                     } catch (e) { }
                 }
 
                 try { if (typeof playSuccessSound === 'function') playSuccessSound(); } catch (e) { }
-                showElderNFCBigNotice("🟢 " + actorName + " 님 출근 완료!", nowTimeStr + " 에 정상적으로 출근 등록되었습니다. 오늘도 파이팅!", true);
+                showElderNFCBigNotice("🟢 " + actorName + " 님 [" + locationName + "] 출근 완료!", nowTimeStr + " 에 정상적으로 출근 등록되었습니다. 오늘도 파이팅!", true);
                 try { if (typeof directAddAuditLog === 'function') directAddAuditLog('CLOCK_IN', "NFC 출근: " + actorName + " (" + nowTimeStr + ")"); } catch (e) { }
             } else {
                 // [퇴근 처리 - 연속 태그 실수 방지 세이프가드]
@@ -1693,7 +1759,7 @@
             // ☁️ 1. Supabase Cloud DB에서 실시간 유저 목록(user_credentials) REST API 무적 직통 긁어오기 (viewer 권한 15명 차단 & 실전 6명 연동)
             try {
                 var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
                 var fetchRes = await fetch(restUrl, {
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
                 });
@@ -2206,8 +2272,97 @@
                 modal.style.zIndex = '9999999';
             }
 
-            try { if (typeof directRenderUserRoles === 'function') directRenderUserRoles(); } catch (err) { }
-            try { if (typeof directPopulateAdminUserDropdown === 'function') directPopulateAdminUserDropdown(); } catch (err) { }
+            // 👥 전체 팀원 관리표 - Supabase REST API 직통 인라인 렌더링 (드롭다운과 100% 동일한 방식!)
+            setTimeout(async function() {
+                try {
+                    var container = document.getElementById('adminUserRoleList');
+                    if (!container) return;
+
+                    var rolesMap = {};
+
+                    // ☁️ 1차: Supabase REST API 직통 fetch (드롭다운 성공 방식 그대로!)
+                    try {
+                        var apiKey = (typeof SUPABASE_KEY !== 'undefined' && SUPABASE_KEY) ? SUPABASE_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                        var res = await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*', {
+                            headers: { 'apikey': apiKey, 'Authorization': 'Bearer ' + apiKey }
+                        });
+                        if (res.ok) {
+                            var list = await res.json();
+                            if (list && list.length > 0) {
+                                list.forEach(function(row) {
+                                    var u = row.username || row.user_name || row.userName;
+                                    if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주' && u.trim() !== 'undefined') {
+                                        rolesMap[u.trim()] = row.role || 'editor';
+                                    }
+                                });
+                            }
+                        }
+                    } catch(e1) {}
+
+                    // 🛡️ 2차: Supabase JS SDK 백업 (드롭다운과 동일!)
+                    if (Object.keys(rolesMap).length === 0 && window.supabaseClient) {
+                        try {
+                            var sdkRes = await window.supabaseClient.from('user_credentials').select('*');
+                            if (sdkRes && sdkRes.data && sdkRes.data.length > 0) {
+                                sdkRes.data.forEach(function(row) {
+                                    var u = row.username || row.user_name || row.userName;
+                                    if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주' && u.trim() !== 'undefined') {
+                                        rolesMap[u.trim()] = row.role || 'editor';
+                                    }
+                                });
+                            }
+                        } catch(e2) {}
+                    }
+
+                    // 📱 3차: AppState 메모리 백업
+                    if (Object.keys(rolesMap).length === 0 && window.AppState && window.AppState.userRoles) {
+                        Object.keys(window.AppState.userRoles).forEach(function(k) {
+                            if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
+                                rolesMap[k.trim()] = window.AppState.userRoles[k] || 'editor';
+                            }
+                        });
+                    }
+
+                    delete rolesMap['강연주'];
+                    delete rolesMap['팀원'];
+                    delete rolesMap['undefined'];
+
+                    if (!window.AppState) window.AppState = {};
+                    window.AppState.userRoles = rolesMap;
+                    try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(rolesMap)); } catch(e) {}
+
+                    var users = Object.keys(rolesMap).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+
+                    // 🎨 HTML 생성 (기존 관리표와 100% 동일한 디자인)
+                    var html = '';
+                    users.forEach(function(uName) {
+                        var role = rolesMap[uName] || 'editor';
+                        var selectHtml = '<select onchange="directUpdateUserRoleFromAdmin(\'' + uName + '\', this.value)" style="padding:4px 8px; font-size:0.8rem; border-radius:6px; border:1px solid #cbd5e1; font-weight:700; background:#f8fafc; color:#0f172a;">' +
+                            '<option value="editor"' + (role === 'editor' || role === 'writer' ? ' selected' : '') + '>✏️ 작성자</option>' +
+                            '<option value="viewer"' + (role === 'viewer' ? ' selected' : '') + '>👁️ 뷰어</option>' +
+                            '<option value="admin"' + (role === 'admin' ? ' selected' : '') + '>👑 최고 관리자</option>' +
+                            '</select>';
+
+                        var delBtn = (uName === '이민우') ? '<span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">[기본 관리자]</span>' :
+                            '<button type="button" onclick="directDeleteUserRoleFromAdmin(\'' + uName + '\')" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer;">🗑️ 삭제</button>';
+
+                        html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:10px 12px; border-radius:10px; border:1px solid rgba(15,23,42,0.1); margin-bottom:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">' +
+                                '<div style="display:flex; align-items:center; gap:8px;">' +
+                                '<strong style="font-size:0.9rem; color:#0f172a;">👤 ' + uName + '</strong>' +
+                                '</div>' +
+                                '<div style="display:flex; align-items:center; gap:8px;">' +
+                                selectHtml + delBtn +
+                                '</div></div>';
+                    });
+
+                    if (!html) {
+                        html = '<div style="font-size:0.82rem; color:#94a3b8; text-align:center; padding:16px 0;">등록된 팀원이 없습니다. 위에서 사전 등록해 주세요!</div>';
+                    }
+                    container.innerHTML = html;
+                } catch(e) {}
+                // 👥 드롭다운도 동시에 갱신
+                try { if (typeof populateAdminUserSelect === 'function') await populateAdminUserSelect(); } catch(e) {}
+            }, 300);
             try {
                 var isNfcEnabled = AppState.nfcAttendanceEnabled !== false;
                 var nfcBtn = document.getElementById('adminNFCToggleBtn');
@@ -8640,7 +8795,7 @@
             // ☁️ 1. Supabase Cloud DB에서 실시간 유저 목록(user_credentials) REST API 무적 직통 긁어오기 (viewer 권한 차단)
             try {
                 var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
                 var fetchRes = await fetch(restUrl, {
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
                 });
@@ -8795,7 +8950,7 @@
             if (!payload || !payload.user_name) return;
             try {
                 var url = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/attendance_records';
-                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
                 var headers = {
                     'apikey': key,
                     'Authorization': 'Bearer ' + key,
@@ -8841,7 +8996,7 @@
 
             // REST API 무적 직통 등록 샷
             try {
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
                 await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials', {
                     method: 'POST',
                     headers: {
@@ -8903,7 +9058,7 @@
 
             // ☁️ Step 1. Supabase Cloud DB (user_credentials) 최우선 선수정
             try {
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
                 await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?username=eq.' + encodeURIComponent(targetName), {
                     method: 'PATCH',
                     headers: {
@@ -8947,7 +9102,7 @@
             // ☁️ Step 1. Supabase Cloud DB REST API 무적 직통 DELETE (보안 락 우회 100% 0.1초 삭제)
             try {
                 var encName = encodeURIComponent(targetName);
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
                 
                 // username 컬럼 삭제
                 await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?username=eq.' + encName, {
@@ -8999,7 +9154,7 @@
             // ☁️ Step 1. Supabase Cloud DB (user_credentials) REST API 무적 직통 긁어오기 (모바일 0.001초 직통과 100% 동일)
             try {
                 var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
                 var res = await fetch(restUrl, {
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
                 });
@@ -9015,6 +9170,24 @@
                     }
                 }
             } catch(e){}
+
+            // 🛡️ Step 1.5. REST API 실패 시 Supabase JS SDK 2차 백업 경로 (드롭다운과 동일한 이중 안전장치)
+            if (Object.keys(rolesMap).length === 0) {
+                var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+                if (sb) {
+                    try {
+                        var sdkRes = await sb.from('user_credentials').select('*');
+                        if (sdkRes && sdkRes.data && sdkRes.data.length > 0) {
+                            sdkRes.data.forEach(function(row) {
+                                var u = row.username || row.user_name || row.userName;
+                                if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주' && u.trim() !== 'undefined') {
+                                    rolesMap[u.trim()] = row.role || 'editor';
+                                }
+                            });
+                        }
+                    } catch(e2){}
+                }
+            }
 
             // 📱 Step 2. 만약 DB 통신에 성공하지 못했을 때만 백업 메모리 수집
             if (Object.keys(rolesMap).length === 0 && window.AppState && window.AppState.userRoles) {
@@ -9082,7 +9255,7 @@
             // ☁️ 1. Supabase Cloud DB에서 실시간 유저 명단(user_credentials) REST API 무적 직통 긁어오기
             try {
                 var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
                 var fetchRes = await fetch(restUrl, {
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
                 });
@@ -9164,7 +9337,7 @@
             // REST API 직통 DELETE 실행 (viewer 15명 클라우드 DB에서 완전 청소 삭제)
             try {
                 var url = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?role=eq.viewer';
-                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3OiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
                 await fetch(url, {
                     method: 'DELETE',
                     headers: { 'apikey': key, 'Authorization': 'Bearer ' + key }
