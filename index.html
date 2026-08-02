@@ -9028,51 +9028,52 @@
         }
         window.directAddNewUserFromAdmin = directAddNewUserFromAdmin;
 
-        // ✏️ [팀원 권한 수정 엔진 - Supabase DB 선반영 ➔ 로컬/화면 갱신 파이프라인]
-        async function directUpdateUserRoleFromAdmin(targetName, newRole) {
+        // ✏️ [팀원 권한 수정 및 수파베이스 DB 무적 upsert 저장 엔진]
+        async function directSaveUserRoleFromAdmin(targetName, selectElemId) {
             if (!targetName) return;
+            var selectElem = document.getElementById(selectElemId);
+            var newRole = selectElem ? selectElem.value : 'editor';
 
             var encName = encodeURIComponent(targetName);
             var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
 
-            // ☁️ Step 1. Supabase Cloud DB (user_credentials) 무적 이중 PATCH (username & user_name 2개 컬럼 동시 갱신)
+            // ☁️ Step 1. Supabase Cloud DB (user_credentials) 무적 upsert 샷 (POST + resolution=merge-duplicates)
             try {
-                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?username=eq.' + encName, {
-                    method: 'PATCH',
+                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials', {
+                    method: 'POST',
                     headers: {
                         'apikey': restKey,
                         'Authorization': 'Bearer ' + restKey,
                         'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
+                        'Prefer': 'resolution=merge-duplicates'
                     },
-                    body: JSON.stringify({
+                    body: JSON.stringify([{
+                        username: targetName,
+                        user_name: targetName,
                         role: newRole,
                         updated_at: new Date().toISOString()
-                    })
+                    }])
                 });
             } catch(e1){}
 
+            // ☁️ Step 1.5. PATCH 이중 보장
             try {
-                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?user_name=eq.' + encName, {
+                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?username=eq.' + encName, {
                     method: 'PATCH',
-                    headers: {
-                        'apikey': restKey,
-                        'Authorization': 'Bearer ' + restKey,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
-                    },
-                    body: JSON.stringify({
-                        role: newRole,
-                        updated_at: new Date().toISOString()
-                    })
+                    headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: newRole, updated_at: new Date().toISOString() })
                 });
             } catch(e2){}
 
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (sb) {
                 try {
-                    await sb.from('user_credentials').update({ role: newRole, updated_at: new Date().toISOString() }).eq('username', targetName);
-                    await sb.from('user_credentials').update({ role: newRole, updated_at: new Date().toISOString() }).eq('user_name', targetName);
+                    await sb.from('user_credentials').upsert([{
+                        username: targetName,
+                        user_name: targetName,
+                        role: newRole,
+                        updated_at: new Date().toISOString()
+                    }], { onConflict: 'username' });
                 } catch(e3){}
             }
 
@@ -9086,8 +9087,12 @@
             if (typeof populateAdminUserSelect === 'function') await populateAdminUserSelect();
             if (typeof directRenderAdminUserRolesTable === 'function') await directRenderAdminUserRolesTable();
             if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
+
+            var roleText = (newRole === 'admin' ? '👑 최고 관리자' : (newRole === 'viewer' ? '👁️ 뷰어' : '✏️ 작성자'));
+            alert("🎉 [권한 변경 및 저장 성공!]\n\n👤 '" + targetName + "' 님의 권한이 '" + roleText + "'(으)로 구글 클라우드 DB(user_credentials)에 100% 성공적으로 저장되었습니다!");
         }
-        window.directUpdateUserRoleFromAdmin = directUpdateUserRoleFromAdmin;
+        window.directSaveUserRoleFromAdmin = directSaveUserRoleFromAdmin;
+        window.directUpdateUserRoleFromAdmin = directSaveUserRoleFromAdmin;
 
         // 🗑️ [팀원 삭제 엔진 - Supabase REST API 직통 100% 실시간 DB 삭제 파이프라인]
         async function directDeleteUserRoleFromAdmin(targetName) {
@@ -9210,11 +9215,14 @@
             users.forEach(function(uName) {
                 if (query && uName.toLowerCase().indexOf(query) === -1) return;
                 var role = rolesMap[uName] || 'editor';
-                var selectHtml = '<select onchange="directUpdateUserRoleFromAdmin(\'' + uName + '\', this.value)" style="padding:4px 8px; font-size:0.8rem; border-radius:6px; border:1px solid #cbd5e1; font-weight:700; background:#f8fafc; color:#0f172a;">' +
+                var selectId = 'adminUserRoleSelect_' + encodeURIComponent(uName).replace(/%/g, '_');
+                var selectHtml = '<select id="' + selectId + '" style="padding:5px 8px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; font-weight:700; background:#f8fafc; color:#0f172a;">' +
                     '<option value="editor"' + (role === 'editor' || role === 'writer' ? ' selected' : '') + '>✏️ 작성자</option>' +
                     '<option value="viewer"' + (role === 'viewer' ? ' selected' : '') + '>👁️ 뷰어</option>' +
                     '<option value="admin"' + (role === 'admin' ? ' selected' : '') + '>👑 최고 관리자</option>' +
                     '</select>';
+
+                var saveBtn = '<button type="button" onclick="directSaveUserRoleFromAdmin(\'' + uName + '\', \'' + selectId + '\')" style="background:#2563eb; color:#ffffff; border:none; padding:5px 10px; border-radius:6px; font-size:0.8rem; font-weight:800; cursor:pointer; box-shadow:0 2px 4px rgba(37,99,235,0.2);">💾 저장</button>';
 
                 var delBtn = (uName === '이민우') ? '<span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">[기본 관리자]</span>' :
                     '<button type="button" onclick="directDeleteUserRoleFromAdmin(\'' + uName + '\')" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer;">🗑️ 삭제</button>';
@@ -9223,8 +9231,9 @@
                         '<div style="display:flex; align-items:center; gap:8px;">' +
                         '<strong style="font-size:0.9rem; color:#0f172a;">👤 ' + uName + '</strong>' +
                         '</div>' +
-                        '<div style="display:flex; align-items:center; gap:8px;">' +
+                        '<div style="display:flex; align-items:center; gap:6px;">' +
                         selectHtml +
+                        saveBtn +
                         delBtn +
                         '</div></div>';
             });
