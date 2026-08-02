@@ -8904,58 +8904,18 @@
         // 본인 선택 후 자동 처리
         function selectNFCUserAndClock(userName) {
             localStorage.setItem('doyakdaro_nfc_my_name', userName);
-            directCloseModal('nfcUserSelectModal');
-            directProcessNFCTagScan(userName);
+            if (typeof directCloseModal === 'function') directCloseModal('nfcUserSelectModal');
+            var pendingCode = window.pendingNfcTagCode 
+                || (new URLSearchParams(window.location.search)).get('nfc_tag') 
+                || (new URLSearchParams(window.location.search)).get('tag')
+                || (new URLSearchParams(window.location.search)).get('nfc_code');
+
+            if (typeof directProcessNFCTagClockIn === 'function') {
+                directProcessNFCTagClockIn(pendingCode, userName);
+            }
         }
         window.selectNFCUserAndClock = selectNFCUserAndClock;
-
-        // 🏷️ NFC 스티커 태그 스마트 0.1초 처리 엔진
-        function directProcessNFCTagScan(targetName) {
-            var mySavedName = targetName || localStorage.getItem('doyakdaro_nfc_my_name');
-            if (!mySavedName) {
-                openNFCUserSelectModal();
-                return;
-            }
-
-            // 출퇴근 처리 상태 판별
-            var records = window.AppState ? (window.AppState.attendanceRecords || []) : [];
-            var todayStr = new Date().toISOString().split('T')[0];
-            var myTodayRecord = records.find(function (r) {
-                var rName = r.user_name || r.userName || r.userId || r.user_id;
-                var rDate = r.work_date || r.workDate;
-                return rName === mySavedName && rDate === todayStr;
-            });
-
-            var isClockInAction = true;
-            if (myTodayRecord && (myTodayRecord.clock_in || myTodayRecord.clockIn) && !(myTodayRecord.clock_out || myTodayRecord.clockOut)) {
-                isClockInAction = false; // 이미 출근 중이면 퇴근 처리
-            }
-
-            // 대리/자동 근태 실행
-            if (typeof directAdminClockToggleUserByName === 'function') {
-                directAdminClockToggleUserByName(mySavedName, isClockInAction, null, 'NFC_TAG');
-            } else if (typeof directAdminClockToggleUser === 'function') {
-                var sel = document.getElementById('adminTargetUserSelect_inConsole') || document.getElementById('adminTargetUserSelect');
-                if (sel) {
-                    var opt = Array.from(sel.options).find(function(o){ return o.value === mySavedName; });
-                    if (opt) sel.value = mySavedName;
-                }
-                directAdminClockToggleUser(isClockInAction);
-            }
-
-            showElderNFCBigNotice(mySavedName, isClockInAction);
-        }
-        window.directProcessNFCTagScan = directProcessNFCTagScan;
-
-        // 🚀 페이지 로딩 시 NFC 태그 접속 감지
-        function checkAutoNFCScanOnLoad() {
-            var params = new URLSearchParams(window.location.search);
-            if (params.get('nfc') === '1' || params.has('nfc_tag')) {
-                setTimeout(function () {
-                    directProcessNFCTagScan();
-                }, 300);
-            }
-        }
+        window.selectMyNFCNameAndProceed = selectNFCUserAndClock;
 
         setTimeout(function(){
             if(typeof renderDashboardDDayCards === 'function') renderDashboardDDayCards();
