@@ -407,12 +407,24 @@
                 if (!isLockOk) return false;
             }
 
-            var tagsList = getValidNfcTagsList();
+            try {
+                if (typeof fetchValidNfcTagsFromCloud === 'function') {
+                    await fetchValidNfcTagsFromCloud();
+                }
+            } catch(e) {}
+
+            var tagsList = (typeof getValidNfcTagsList === 'function') ? getValidNfcTagsList() : (AppState.validNfcTags || []);
+            var inputStr = String(tagIdInput || '').trim().toLowerCase();
+
             var matchedTag = tagsList.find(function(t) {
-                return (t.tag_code === tagIdInput || t.tag_uid === tagIdInput || tagIdInput.indexOf(t.tag_code) !== -1);
+                if (!t) return false;
+                var codeStr = String(t.tag_code || '').trim().toLowerCase();
+                var uidStr = String(t.tag_uid || '').trim().toLowerCase();
+                return (codeStr && (codeStr === inputStr || inputStr.indexOf(codeStr) !== -1 || codeStr.indexOf(inputStr) !== -1))
+                    || (uidStr && (uidStr === inputStr || inputStr.indexOf(uidStr) !== -1));
             });
 
-            var locationName = matchedTag ? matchedTag.location_name : '🏢 본사';
+            var locationName = matchedTag ? (matchedTag.location_name || '🏢 본사') : '🏢 본사';
             var safeTodayStr = new Date().toISOString().substring(0, 10);
             var nowIso = new Date().toISOString();
 
@@ -2733,6 +2745,8 @@
                                 clockOut: a.clock_out,
                                 totalHours: a.total_hours,
                                 status: a.status,
+                                locationName: a.location_name || a.locationName || '🏢 본사',
+                                checkInType: a.check_in_type || a.checkInType || 'NFC',
                                 nfcTagged: a.nfc_tagged
                             };
                         });
@@ -2762,6 +2776,8 @@
                                         clock_out: r.clockOut,
                                         total_hours: r.totalHours,
                                         status: r.status,
+                                        location_name: r.locationName || '🏢 본사',
+                                        check_in_type: r.checkInType || 'NFC',
                                         nfc_tagged: r.nfcTagged || false
                                     }]);
                                 } catch(e){}
