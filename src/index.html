@@ -2259,6 +2259,14 @@
         }
         window.directAdminClockToggleUser = directAdminClockToggleUser;
 
+        // 👥 전체 팀원 관리표 - 최신 무적 렌더러 단일 직통 구동
+        if (typeof directRenderAdminUserRolesTable === 'function') {
+            directRenderAdminUserRolesTable();
+        }
+        if (typeof populateAdminUserSelect === 'function') {
+            populateAdminUserSelect();
+        }
+
         // 👑 [관리자 전용 제어판 & 팀원 권한 지정 모달 100% 오픈 스크립트 - 최상단 고정]
         window.directOpenAdminModal = function (e) {
             if (e && typeof e.preventDefault === 'function') e.preventDefault();

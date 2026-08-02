@@ -2140,7 +2140,14 @@
         window.directAdminClockToggleUserInAdminModal = directAdminClockToggleUserInAdminModal;
 
         async function directAdminClockToggleUser(isClockIn) {
-            var selectEl = document.getElementById('adminTargetUserSelect_inConsole') || document.getElementById('adminTargetUserSelect_inModal') || document.getElementById('adminTargetUserSelect');
+            var selectEl = document.getElementById('adminTargetUserSelect_inConsole') || document.getElementById('adminTargetUserSelect_inModal') || document.getElementById('adminTargetUser');
+            // 👥 전체 팀원 관리표 - 최신 무적 렌더러 단일 직통 구동
+            if (typeof directRenderAdminUserRolesTable === 'function') {
+                directRenderAdminUserRolesTable();
+            }
+            if (typeof populateAdminUserSelect === 'function') {
+                populateAdminUserSelect();
+            }
             var targetName = selectEl ? selectEl.value.trim() : '';
 
             if (!targetName) {
