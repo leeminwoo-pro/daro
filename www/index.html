@@ -9030,41 +9030,60 @@
         async function directUpdateUserRoleFromAdmin(targetName, newRole) {
             if (!targetName) return;
 
-            // ☁️ Step 1. Supabase Cloud DB (user_credentials) 최우선 선수정
+            var encName = encodeURIComponent(targetName);
+            var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+
+            // ☁️ Step 1. Supabase Cloud DB (user_credentials) 무적 이중 PATCH (username & user_name 2개 컬럼 동시 갱신)
             try {
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
-                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?username=eq.' + encodeURIComponent(targetName), {
+                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?username=eq.' + encName, {
                     method: 'PATCH',
                     headers: {
                         'apikey': restKey,
                         'Authorization': 'Bearer ' + restKey,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
                     },
                     body: JSON.stringify({
                         role: newRole,
                         updated_at: new Date().toISOString()
                     })
                 });
-            } catch(e){}
+            } catch(e1){}
+
+            try {
+                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?user_name=eq.' + encName, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': restKey,
+                        'Authorization': 'Bearer ' + restKey,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        role: newRole,
+                        updated_at: new Date().toISOString()
+                    })
+                });
+            } catch(e2){}
 
             var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
             if (sb) {
                 try {
-                    await sb.from('user_credentials').update({
-                        role: newRole,
-                        updated_at: new Date().toISOString()
-                    }).eq('username', targetName);
-                } catch(e){}
+                    await sb.from('user_credentials').update({ role: newRole, updated_at: new Date().toISOString() }).eq('username', targetName);
+                    await sb.from('user_credentials').update({ role: newRole, updated_at: new Date().toISOString() }).eq('user_name', targetName);
+                } catch(e3){}
             }
 
             // 📱 Step 2. 로컬스토리지 & 메모리 동기화
+            if (!window.AppState) window.AppState = {};
             if (!window.AppState.userRoles) window.AppState.userRoles = {};
             window.AppState.userRoles[targetName] = newRole;
             try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
 
-            // 💻 Step 3. UI 갱신
+            // 💻 Step 3. UI 렌더링 갱신
             if (typeof populateAdminUserSelect === 'function') await populateAdminUserSelect();
             if (typeof directRenderAdminUserRolesTable === 'function') await directRenderAdminUserRolesTable();
+            if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
         }
         window.directUpdateUserRoleFromAdmin = directUpdateUserRoleFromAdmin;
 
