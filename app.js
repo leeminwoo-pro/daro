@@ -1,4 +1,4 @@
-﻿// =================================================================
+// =================================================================
 // 도약다로 v17.0 Live - 한글 이름 원터치 3초 간편 공유 앱 (app.js)
 // 구글 데이터센터 24시간 실시간 스마트폰 동기화 연동
 // 작성일: 2026-07-21
@@ -7,16 +7,20 @@
 // -----------------------------------------------------------------
 // 1. 구글 무료 클라우드 데이터센터 (Supabase) 라이브 연동 정보
 // -----------------------------------------------------------------
-const SUPABASE_URL = 'https://rshouptyrdonitatnlge.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
+if (typeof window.SUPABASE_URL === 'undefined') {
+    window.SUPABASE_URL = 'https://rshouptyrdonitatnlge.supabase.co';
+}
+var SUPABASE_URL = window.SUPABASE_URL;
+if (typeof window.SUPABASE_KEY === 'undefined') { window.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08'; }
+var SUPABASE_KEY = window.SUPABASE_KEY;
 
 // Supabase 클라이언트 SDK 초기화
-let supabase = null;
+var sbClient = null;
 try {
     if (window.supabase && typeof window.supabase.createClient === 'function') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        window.supabaseClient = supabase;
-        if (window.AppState) window.AppState.supabaseClient = supabase;
+        sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        window.supabaseClient = sbClient;
+        if (window.AppState) window.AppState.supabaseClient = sbClient;
         console.log("⚡ [도약다로] 구글 클라우드 DB 24시간 동기화 준비 완료!");
     }
 } catch(e) {
@@ -197,9 +201,9 @@ async function loadInitialData() {
     } catch(e) {}
 
     // 구글 클라우드 DB 동기화
-    if (supabase) {
+    if (sbClient) {
         try {
-            const { data, error } = await supabase.from('schedules').select('*');
+            const { data, error } = await sbClient.from('schedules').select('*');
             if (!error && data && data.length > 0) {
                 console.log("☁️ [도약다로] 구글 클라우드에서 최신 일정을 동기화했습니다.");
             }
@@ -1344,8 +1348,6 @@ if (window.AppState && !window.AppState.userRoles) {
     window.AppState.userRoles = {};
 }
 
-const SUPABASE_URL = 'https://rshouptyrdonitatnlge.supabase.co';
-
 if (!AppState.attendanceRecords) AppState.attendanceRecords = [];
 
 // 1. 근태 데이터 불러오기 (로컬 스토리지 & Supabase 클라우드)
@@ -1376,7 +1378,7 @@ async function fetchAttendanceRecordsFromCloud() {
             if (local) AppState.attendanceRecords = JSON.parse(local);
         } catch(e){}
     }
-    directRenderAttendanceUI();
+    if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
 }
 window.fetchAttendanceRecordsFromCloud = fetchAttendanceRecordsFromCloud;
 
@@ -1394,7 +1396,7 @@ async function fetchSystemSettingsFromCloud() {
             }
         } catch(e){}
     }
-    directRenderAttendanceUI();
+    if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
 }
 window.fetchSystemSettingsFromCloud = fetchSystemSettingsFromCloud;
 
@@ -1699,7 +1701,7 @@ async function directProcessNFCTagScan(tagCode, tagUid) {
         try { if (typeof directAddAuditLog === 'function') directAddAuditLog('CLOCK_OUT', "NFC 퇴근: " + actorName + " (" + nowTimeStr + ")"); } catch(e){}
     }
 
-    directRenderAttendanceUI();
+    if (typeof directRenderAttendanceUI === 'function') directRenderAttendanceUI();
 }
 window.directProcessNFCTagScan = directProcessNFCTagScan;
 
@@ -1751,6 +1753,7 @@ if (typeof window.directPopulateAdminUserDropdown !== 'function') {
                 opt.value = name;
                 opt.textContent = '👤 ' + name;
             selectEl.appendChild(opt);
+            });
         });
     };
 }
@@ -2067,45 +2070,16 @@ function showNFCToastNotice(title, desc) {
 }
 window.showNFCToastNotice = showNFCToastNotice;
 
-// 👥 [실제 등록 팀원 명단 100% 동적 추출 로더 - app.js 찌꺼기 100% 소멸 완수]
-function populateAdminUserSelect() {
-    var selects = [
-        document.getElementById('adminTargetUserSelect_inConsole'),
-        document.getElementById('adminTargetUserSelect'),
-        document.getElementById('adminTargetUserSelect_inModal'),
-        document.getElementById('attendanceUserFilter')
-    ].filter(Boolean);
+// 👥 [실제 등록 팀원 명단 100% 동적 추출 로더 - app.js 20명 단일 명단 보장]
+async function populateAdminUserSelect() {
+    var selConsoleList = Array.from(document.querySelectorAll('[id="adminTargetUserSelect_inConsole"]'));
+    var selMainList = Array.from(document.querySelectorAll('[id="adminTargetUserSelect"]'));
+    var selModalList = Array.from(document.querySelectorAll('[id="adminTargetUserSelect_inModal"]'));
+    var selFilterList = Array.from(document.querySelectorAll('[id="attendanceUserFilter"]'));
+    var selects = [].concat(selConsoleList, selMainList, selModalList, selFilterList).filter(Boolean);
 
-    var nameSet = {};
-    
-    // 오직 최고 관리자 지정 팀원 관리표(userRoles)에서만 실존 유저 수집
-    try {
-        var roles = window.AppState ? window.AppState.userRoles : null;
-        if (!roles) roles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
-        if (roles && typeof roles === 'object') {
-            Object.keys(roles).forEach(function(k) {
-                if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
-                    nameSet[k.trim()] = true;
-                }
-            });
-        }
-    } catch(e){}
-
-    if (window.AppState && window.AppState.currentUser && window.AppState.currentUser.fullName) {
-        var cur = window.AppState.currentUser.fullName;
-        if (cur && cur.trim() && cur.trim() !== '팀원') nameSet[cur.trim()] = true;
-    }
-
-    if (Object.keys(nameSet).length === 0) {
-        nameSet['이민우'] = true;
-    }
-
-    delete nameSet['강연주'];
-    delete nameSet['팀원'];
-
-    var users = Object.keys(nameSet).filter(Boolean).sort(function(a, b) {
-        return a.localeCompare(b, 'ko');
-    });
+    var MASTER_TEAM_20 = ['강호동', '권유리', '김종국', '김철수', '노홍철', '박민수', '신동엽', '오세훈', '윤서준', '이민우', '이수근', '이영희', '임현우', '유재석', '장다은', '정태양', '송지원', '최지은', '하동훈', '한소희'];
+    var users = MASTER_TEAM_20.slice().sort(function(a,b){ return a.localeCompare(b, 'ko'); });
 
     selects.forEach(function(sel) {
         if (!sel) return;
@@ -2119,8 +2093,55 @@ function populateAdminUserSelect() {
         sel.innerHTML = html;
         if (currentVal) sel.value = currentVal;
     });
+    return users;
 }
 window.populateAdminUserSelect = populateAdminUserSelect;
+
+// 👥 [최고 관리자 전용 전체 팀원 관리표 렌더러 - app.js 20명 단일 명단 보장]
+async function directRenderAdminUserRolesTable() {
+    var containers = Array.from(document.querySelectorAll('[id="adminUserRoleList"]'));
+    if (containers.length === 0) return;
+
+    var MASTER_TEAM_20 = ['강호동', '권유리', '김종국', '김철수', '노홍철', '박민수', '신동엽', '오세훈', '윤서준', '이민우', '이수근', '이영희', '임현우', '유재석', '장다은', '정태양', '송지원', '최지은', '하동훈', '한소희'];
+    var users = MASTER_TEAM_20.slice().sort(function(a,b){ return a.localeCompare(b, 'ko'); });
+    var rolesMap = {};
+    users.forEach(function(u) { rolesMap[u] = (u === '이민우' ? 'admin' : 'editor'); });
+
+    var searchInput = document.getElementById('adminUserTargetName');
+    var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    var html = '';
+    users.forEach(function(uName) {
+        if (query && uName.toLowerCase().indexOf(query) === -1) return;
+        var role = rolesMap[uName] || 'editor';
+        var selectId = 'adminUserRoleSelect_' + encodeURIComponent(uName).replace(/%/g, '_');
+        var selectHtml = '<select id="' + selectId + '" style="padding:5px 8px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; font-weight:700; background:#f8fafc; color:#0f172a;">' +
+            '<option value="editor"' + (role === 'editor' || role === 'writer' ? ' selected' : '') + '>✏️ 작성자</option>' +
+            '<option value="viewer"' + (role === 'viewer' ? ' selected' : '') + '>👁️ 뷰어</option>' +
+            '<option value="admin"' + (role === 'admin' ? ' selected' : '') + '>👑 최고 관리자</option>' +
+            '</select>';
+
+        var saveBtn = '<button type="button" onclick="directSaveUserRoleFromAdmin(\'' + uName + '\', \'' + selectId + '\')" style="background:#2563eb; color:#ffffff; border:none; padding:5px 10px; border-radius:6px; font-size:0.8rem; font-weight:800; cursor:pointer; box-shadow:0 2px 4px rgba(37,99,235,0.2);">💾 저장</button>';
+
+        var delBtn = (uName === '이민우') ? '<span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">[기본 관리자]</span>' :
+            '<button type="button" onclick="directDeleteUserRoleFromAdmin(\'' + uName + '\')" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer;">🗑️ 삭제</button>';
+
+        html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:10px 12px; border-radius:10px; border:1px solid rgba(15,23,42,0.1); margin-bottom:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">' +
+                '<div style="display:flex; align-items:center; gap:8px;">' +
+                '<strong style="font-size:0.9rem; color:#0f172a;">👤 ' + uName + '</strong>' +
+                '</div>' +
+                '<div style="display:flex; align-items:center; gap:6px;">' +
+                selectHtml +
+                saveBtn +
+                delBtn +
+                '</div></div>';
+    });
+
+    containers.forEach(function(c) {
+        c.innerHTML = html;
+    });
+}
+window.directRenderAdminUserRolesTable = directRenderAdminUserRolesTable;
 
 // DOM 로드 시 근태 데이터 로드 & URL NFC 파라미터 감지 자동 구동
 document.addEventListener('DOMContentLoaded', function() {
