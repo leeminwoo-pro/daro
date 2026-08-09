@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko" class="notranslate" translate="no">
 
 <head>
@@ -324,8 +324,8 @@
         // 🏷️ 진품 NFC 스티커 태그 목록 초기화 및 Supabase Cloud DB 직통 갱신 무적 엔진
         async function fetchValidNfcTagsFromCloud() {
             try {
-                var apiKey = (typeof SUPABASE_KEY !== 'undefined' && SUPABASE_KEY) ? SUPABASE_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
-                var res = await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/nfc_tags?select=*', {
+                var apiKey = (typeof SUPABASE_KEY !== 'undefined' && SUPABASE_KEY) ? SUPABASE_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
+                var res = await fetch('https://rshouptyrdonitatnlge.supabase.co/rest/v1/nfc_tags?select=*', {
                     headers: { 'apikey': apiKey, 'Authorization': 'Bearer ' + apiKey }
                 });
                 if (res.ok) {
@@ -767,8 +767,8 @@
             }
 
             try {
-                var url = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/attendance_records?id=neq.NEVER_MATCH_SAFE_ID';
-                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var url = 'https://rshouptyrdonitatnlge.supabase.co/rest/v1/attendance_records?id=neq.NEVER_MATCH_SAFE_ID';
+                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
                 fetch(url, { method: 'DELETE', headers: { 'apikey': key, 'Authorization': 'Bearer ' + key } });
             } catch(e){}
 
@@ -1770,8 +1770,8 @@
 
             // ☁️ 1. Supabase Cloud DB에서 실시간 유저 목록(user_credentials) REST API 무적 직통 긁어오기 (viewer 권한 15명 차단 & 실전 6명 연동)
             try {
-                var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restUrl = 'https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials?select=*';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
                 var fetchRes = await fetch(restUrl, {
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
                 });
@@ -2531,8 +2531,8 @@
         }
 
         // ☁️ 구글 클라우드 Supabase 실시간 1초 동기화 엔진
-        var SUPABASE_URL = 'https://fhwqaixpxffnapmqvvdy.supabase.co';
-        var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+        var SUPABASE_URL = 'https://rshouptyrdonitatnlge.supabase.co';
+        var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
         var supabaseClient = null;
 
         function initSupabaseCloudEngine() {
@@ -7147,7 +7147,7 @@
             <span class="brand-title"
                 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">도약다로</span>
             <span class="badge-v"
-                style="font-size: 0.7rem; background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(37, 99, 235, 0.2);">v35.0</span>
+                style="font-size: 0.7rem; background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(37, 99, 235, 0.2);">v36.0</span>
         </div>
 
         <!-- 🔍 0.1초 울트라 슬림 실시간 통합 검색바 -->
@@ -8579,8 +8579,8 @@
 
             // ☁️ Step 1. Supabase Cloud DB (user_credentials) REST API 무적 직통 긁어오기
             try {
-                var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restUrl = 'https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials?select=*';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
                 var res = await fetch(restUrl, {
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
                 });
@@ -8813,8 +8813,8 @@
 
             // ☁️ 1. Supabase Cloud DB에서 실시간 유저 목록(user_credentials) REST API 무적 직통 긁어오기 (viewer 권한 차단)
             try {
-                var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restUrl = 'https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials?select=*';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
                 var fetchRes = await fetch(restUrl, {
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
                 });
@@ -8928,8 +8928,8 @@
         async function directPushToSupabaseRestAPI(payload) {
             if (!payload || !payload.user_name) return;
             try {
-                var url = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/attendance_records';
-                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var url = 'https://rshouptyrdonitatnlge.supabase.co/rest/v1/attendance_records';
+                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
                 var headers = {
                     'apikey': key,
                     'Authorization': 'Bearer ' + key,
@@ -8975,8 +8975,8 @@
 
             // REST API 무적 직통 등록 샷
             try {
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
-                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials', {
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
+                await fetch('https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials', {
                     method: 'POST',
                     headers: {
                         'apikey': restKey,
@@ -9038,11 +9038,11 @@
             var newRole = selectElem ? selectElem.value : 'editor';
 
             var encName = encodeURIComponent(targetName);
-            var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+            var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
 
             // ☁️ Step 1. Supabase Cloud DB (user_credentials) 무적 upsert 샷 (POST + resolution=merge-duplicates)
             try {
-                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials', {
+                await fetch('https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials', {
                     method: 'POST',
                     headers: {
                         'apikey': restKey,
@@ -9061,7 +9061,7 @@
 
             // ☁️ Step 1.5. PATCH 이중 보장
             try {
-                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?username=eq.' + encName, {
+                await fetch('https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials?username=eq.' + encName, {
                     method: 'PATCH',
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ role: newRole, updated_at: new Date().toISOString() })
@@ -9105,16 +9105,16 @@
             // ☁️ Step 1. Supabase Cloud DB REST API 무적 직통 DELETE (보안 락 우회 100% 0.1초 삭제)
             try {
                 var encName = encodeURIComponent(targetName);
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
                 
                 // username 컬럼 삭제
-                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?username=eq.' + encName, {
+                await fetch('https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials?username=eq.' + encName, {
                     method: 'DELETE',
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
                 });
 
                 // user_name 컬럼 삭제
-                await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?user_name=eq.' + encName, {
+                await fetch('https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials?user_name=eq.' + encName, {
                     method: 'DELETE',
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
                 });
@@ -9156,8 +9156,8 @@
 
             // ☁️ Step 1. Supabase Cloud DB (user_credentials) REST API 무적 직통 긁어오기 (모바일 0.001초 직통과 100% 동일)
             try {
-                var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restUrl = 'https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials?select=*';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
                 var res = await fetch(restUrl, {
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
                 });
@@ -9265,8 +9265,8 @@
 
             // ☁️ 1. Supabase Cloud DB에서 실시간 유저 명단(user_credentials) REST API 무적 직통 긁어오기
             try {
-                var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
-                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var restUrl = 'https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials?select=*';
+                var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
                 var fetchRes = await fetch(restUrl, {
                     headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
                 });
@@ -9347,8 +9347,8 @@
             
             // REST API 직통 DELETE 실행 (viewer 15명 클라우드 DB에서 완전 청소 삭제)
             try {
-                var url = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?role=eq.viewer';
-                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
+                var url = 'https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials?role=eq.viewer';
+                var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
                 await fetch(url, {
                     method: 'DELETE',
                     headers: { 'apikey': key, 'Authorization': 'Bearer ' + key }
