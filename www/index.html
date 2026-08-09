@@ -895,32 +895,23 @@
                 }
             }
 
-            // 1. 최고 관리자 제어판 [전체팀원 관리표] 등록 명단 100% 동적 집계 (localStorage & AppState 100% 최우선 실시간 병합)
+            // 1. 오직 Supabase Cloud DB (user_credentials) 기반 정식 등록 팀원 명단만 100% 칼같이 집계 (찌꺼기 0% 보장)
             var uNameSet = {};
-            try {
-                var localRoles = {};
-                try { localRoles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {}; } catch(e){}
-                var memRoles = AppState.userRoles || {};
-                
-                // 최신 로컬스토리지와 메모리 상태 병합
-                var mergedRoles = Object.assign({}, localRoles, memRoles);
-                AppState.userRoles = mergedRoles;
-
-                if (mergedRoles && typeof mergedRoles === 'object') {
-                    Object.keys(mergedRoles).forEach(function(n) {
-                        if (n && n.trim() && n.trim() !== '팀원' && n.trim() !== '강연주' && n.trim() !== 'undefined') {
-                            uNameSet[n.trim()] = true;
-                        }
-                    });
-                }
-            } catch(e){}
-
-            if (AppState.currentUser && AppState.currentUser.fullName && AppState.currentUser.fullName.trim() !== '팀원') {
-                uNameSet[AppState.currentUser.fullName.trim()] = true;
+            if (AppState.userRoles && typeof AppState.userRoles === 'object') {
+                Object.keys(AppState.userRoles).forEach(function(n) {
+                    var role = AppState.userRoles[n];
+                    if (role === 'viewer') return; // 🚫 단순 뷰어 제외
+                    if (n && n.trim() && n.trim() !== '팀원' && n.trim() !== '강연주' && n.trim() !== 'undefined') {
+                        uNameSet[n.trim()] = true;
+                    }
+                });
             }
-            
+            delete uNameSet['강연주'];
+            delete uNameSet['팀원'];
+            delete uNameSet['undefined'];
+
             var userNames = Object.keys(uNameSet);
-            if (userNames.length === 0) userNames = [actorName];
+            if (userNames.length === 0) userNames = ['이민우'];
             var totalUserCount = userNames.length;
 
             var todayRecords = records.filter(function(r) { return normalizeDateStr(r.workDate) === todayStr; });
@@ -7107,7 +7098,7 @@
             <span class="brand-title"
                 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">도약다로</span>
             <span class="badge-v"
-                style="font-size: 0.7rem; background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(37, 99, 235, 0.2);">v38.0</span>
+                style="font-size: 0.7rem; background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(37, 99, 235, 0.2);">v39.0</span>
         </div>
 
         <!-- 🔍 0.1초 울트라 슬림 실시간 통합 검색바 -->
