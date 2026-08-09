@@ -2291,95 +2291,20 @@
                 modal.style.zIndex = '9999999';
             }
 
-            // 👥 전체 팀원 관리표 - Supabase REST API 직통 인라인 렌더링 (드롭다운과 100% 동일한 방식!)
-            setTimeout(async function() {
-                try {
-                    var container = document.getElementById('adminUserRoleList');
-                    if (!container) return;
+            // 👥 전체 팀원 관리표 - 검색창 깨끗이 리셋 후 최신 무적 렌더러 단일 직통 구동
+            try {
+                var targetNameInput = document.getElementById('adminUserTargetName');
+                if (targetNameInput) {
+                    targetNameInput.value = '';
+                }
+            } catch (err) { }
 
-                    var rolesMap = {};
-
-                    // ☁️ 1차: Supabase REST API 직통 fetch (드롭다운 성공 방식 그대로!)
-                    try {
-                        var apiKey = (typeof SUPABASE_KEY !== 'undefined' && SUPABASE_KEY) ? SUPABASE_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
-                        var res = await fetch('https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*', {
-                            headers: { 'apikey': apiKey, 'Authorization': 'Bearer ' + apiKey }
-                        });
-                        if (res.ok) {
-                            var list = await res.json();
-                            if (list && list.length > 0) {
-                                list.forEach(function(row) {
-                                    var u = row.username || row.user_name || row.userName;
-                                    if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주' && u.trim() !== 'undefined') {
-                                        rolesMap[u.trim()] = row.role || 'editor';
-                                    }
-                                });
-                            }
-                        }
-                    } catch(e1) {}
-
-                    // 🛡️ 2차: Supabase JS SDK 백업 (드롭다운과 동일!)
-                    if (Object.keys(rolesMap).length === 0 && window.supabaseClient) {
-                        try {
-                            var sdkRes = await window.supabaseClient.from('user_credentials').select('*');
-                            if (sdkRes && sdkRes.data && sdkRes.data.length > 0) {
-                                sdkRes.data.forEach(function(row) {
-                                    var u = row.username || row.user_name || row.userName;
-                                    if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주' && u.trim() !== 'undefined') {
-                                        rolesMap[u.trim()] = row.role || 'editor';
-                                    }
-                                });
-                            }
-                        } catch(e2) {}
-                    }
-
-                    // 📱 3차: AppState 메모리 백업
-                    if (Object.keys(rolesMap).length === 0 && window.AppState && window.AppState.userRoles) {
-                        Object.keys(window.AppState.userRoles).forEach(function(k) {
-                            if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
-                                rolesMap[k.trim()] = window.AppState.userRoles[k] || 'editor';
-                            }
-                        });
-                    }
-
-                    delete rolesMap['강연주'];
-                    delete rolesMap['팀원'];
-                    delete rolesMap['undefined'];
-
-                    if (!window.AppState) window.AppState = {};
-                    window.AppState.userRoles = rolesMap;
-                    try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(rolesMap)); } catch(e) {}
-
-                    var users = Object.keys(rolesMap).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
-
-                    var html = '';
-                    users.forEach(function(uName) {
-                        var role = rolesMap[uName] || 'editor';
-                        var selectHtml = '<select onchange="directUpdateUserRoleFromAdmin(\'' + uName + '\', this.value)" style="padding:4px 8px; font-size:0.8rem; border-radius:6px; border:1px solid #cbd5e1; font-weight:700; background:#f8fafc; color:#0f172a;">' +
-                            '<option value="editor"' + (role === 'editor' || role === 'writer' ? ' selected' : '') + '>✏️ 작성자</option>' +
-                            '<option value="viewer"' + (role === 'viewer' ? ' selected' : '') + '>👁️ 뷰어</option>' +
-                            '<option value="admin"' + (role === 'admin' ? ' selected' : '') + '>👑 최고 관리자</option>' +
-                            '</select>';
-
-                        var delBtn = (uName === '이민우') ? '<span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">[기본 관리자]</span>' :
-                            '<button type="button" onclick="directDeleteUserRoleFromAdmin(\'' + uName + '\')" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer;">🗑️ 삭제</button>';
-
-                        html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:10px 12px; border-radius:10px; border:1px solid rgba(15,23,42,0.1); margin-bottom:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">' +
-                                '<div style="display:flex; align-items:center; gap:8px;">' +
-                                '<strong style="font-size:0.9rem; color:#0f172a;">👤 ' + uName + '</strong>' +
-                                '</div>' +
-                                '<div style="display:flex; align-items:center; gap:8px;">' +
-                                selectHtml + delBtn +
-                                '</div></div>';
-                    });
-
-                    if (!html) {
-                        html = '<div style="font-size:0.82rem; color:#94a3b8; text-align:center; padding:16px 0;">등록된 팀원이 없습니다. 위에서 사전 등록해 주세요!</div>';
-                    }
-                    container.innerHTML = html;
-                } catch(e) {}
-                try { if (typeof populateAdminUserSelect === 'function') await populateAdminUserSelect(); } catch(e) {}
-            }, 300);
+            if (typeof directRenderAdminUserRolesTable === 'function') {
+                directRenderAdminUserRolesTable();
+            }
+            if (typeof populateAdminUserSelect === 'function') {
+                populateAdminUserSelect();
+            }
             try {
                 var isNfcEnabled = AppState.nfcAttendanceEnabled !== false;
                 var nfcBtn = document.getElementById('adminNFCToggleBtn');
@@ -7954,11 +7879,14 @@
                     </div>
                 </div>
 
-                <!-- 이름 실시간 검색 필터 -->
-                <div style="margin-bottom: 10px;">
-                    <input type="text" id="adminUserTargetName" placeholder="🔍 팀원 성함 실시간 검색..."
+                <!-- 이름 실시간 검색 필터 (자동완성 방지 및 전체보기 버튼 탑재) -->
+                <div style="margin-bottom: 10px; display: flex; gap: 6px; align-items: center;">
+                    <input type="text" id="adminUserTargetName" autocomplete="off" placeholder="🔍 팀원 성함 실시간 검색..."
                         onkeyup="directFilterUserRolesTable()"
-                        style="width: 100%; padding: 8px 12px; font-size: 0.88rem; background: #ffffff; color: #0f172a; border: 1px solid rgba(15,23,42,0.2); border-radius: 8px; font-weight: 600;">
+                        style="flex: 1; padding: 8px 12px; font-size: 0.88rem; background: #ffffff; color: #0f172a; border: 1px solid rgba(15,23,42,0.2); border-radius: 8px; font-weight: 600;">
+                    <button type="button" onclick="var el=document.getElementById('adminUserTargetName'); if(el){el.value=''; directRenderAdminUserRolesTable();}" class="btn-secondary btn-sm" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:7px 10px; border-radius:8px; font-weight:700; font-size:0.8rem; cursor:pointer; white-space:nowrap; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                        🔄 전체보기
+                    </button>
                 </div>
 
                 <!-- 전체 팀원 원터치 관리표 목록 (최대 420px 시원한 트인 레이아웃) -->
@@ -9244,7 +9172,11 @@
             });
 
             if (!html) {
-                html = '<div style="font-size:0.82rem; color:#94a3b8; text-align:center; padding:16px 0;">등록된 팀원이 없습니다. 위에서 사전 등록해 주세요!</div>';
+                if (query) {
+                    html = '<div style="font-size:0.85rem; color:#64748b; text-align:center; padding:16px 12px; background:#f8fafc; border-radius:10px; border:1px dashed #cbd5e1;">🔍 <strong>\'' + query + '\'</strong> 검색 결과와 일치하는 팀원이 없습니다. <br><button type="button" onclick="var el=document.getElementById(\'adminUserTargetName\'); if(el){el.value=\'\'; directRenderAdminUserRolesTable();}" style="margin-top:8px; background:#2563eb; color:#ffffff; border:none; padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer; box-shadow:0 2px 4px rgba(37,99,235,0.2);">🔄 전체 팀원 20명 목록 보기</button></div>';
+                } else {
+                    html = '<div style="font-size:0.82rem; color:#94a3b8; text-align:center; padding:16px 0;">등록된 팀원이 없습니다. 위에서 사전 등록해 주세요!</div>';
+                }
             }
             container.innerHTML = html;
         }

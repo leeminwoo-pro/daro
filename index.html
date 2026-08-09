@@ -2284,7 +2284,14 @@
                 modal.style.zIndex = '9999999';
             }
 
-            // 👥 전체 팀원 관리표 - 최신 무적 렌더러 단일 직통 구동
+            // 👥 전체 팀원 관리표 - 검색창 깨끗이 리셋 후 최신 무적 렌더러 단일 직통 구동
+            try {
+                var targetNameInput = document.getElementById('adminUserTargetName');
+                if (targetNameInput) {
+                    targetNameInput.value = '';
+                }
+            } catch (err) { }
+
             if (typeof directRenderAdminUserRolesTable === 'function') {
                 directRenderAdminUserRolesTable();
             }
@@ -7865,11 +7872,14 @@
                     </div>
                 </div>
 
-                <!-- 이름 실시간 검색 필터 -->
-                <div style="margin-bottom: 10px;">
-                    <input type="text" id="adminUserTargetName" placeholder="🔍 팀원 성함 실시간 검색..."
+                <!-- 이름 실시간 검색 필터 (자동완성 방지 및 전체보기 버튼 탑재) -->
+                <div style="margin-bottom: 10px; display: flex; gap: 6px; align-items: center;">
+                    <input type="text" id="adminUserTargetName" autocomplete="off" placeholder="🔍 팀원 성함 실시간 검색..."
                         onkeyup="directFilterUserRolesTable()"
-                        style="width: 100%; padding: 8px 12px; font-size: 0.88rem; background: #ffffff; color: #0f172a; border: 1px solid rgba(15,23,42,0.2); border-radius: 8px; font-weight: 600;">
+                        style="flex: 1; padding: 8px 12px; font-size: 0.88rem; background: #ffffff; color: #0f172a; border: 1px solid rgba(15,23,42,0.2); border-radius: 8px; font-weight: 600;">
+                    <button type="button" onclick="var el=document.getElementById('adminUserTargetName'); if(el){el.value=''; directRenderAdminUserRolesTable();}" class="btn-secondary btn-sm" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:7px 10px; border-radius:8px; font-weight:700; font-size:0.8rem; cursor:pointer; white-space:nowrap; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                        🔄 전체보기
+                    </button>
                 </div>
 
                 <!-- 전체 팀원 원터치 관리표 목록 (최대 420px 시원한 트인 레이아웃) -->
@@ -9155,7 +9165,11 @@
             });
 
             if (!html) {
-                html = '<div style="font-size:0.82rem; color:#94a3b8; text-align:center; padding:16px 0;">등록된 팀원이 없습니다. 위에서 사전 등록해 주세요!</div>';
+                if (query) {
+                    html = '<div style="font-size:0.85rem; color:#64748b; text-align:center; padding:16px 12px; background:#f8fafc; border-radius:10px; border:1px dashed #cbd5e1;">🔍 <strong>\'' + query + '\'</strong> 검색 결과와 일치하는 팀원이 없습니다. <br><button type="button" onclick="var el=document.getElementById(\'adminUserTargetName\'); if(el){el.value=\'\'; directRenderAdminUserRolesTable();}" style="margin-top:8px; background:#2563eb; color:#ffffff; border:none; padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer; box-shadow:0 2px 4px rgba(37,99,235,0.2);">🔄 전체 팀원 20명 목록 보기</button></div>';
+                } else {
+                    html = '<div style="font-size:0.82rem; color:#94a3b8; text-align:center; padding:16px 0;">등록된 팀원이 없습니다. 위에서 사전 등록해 주세요!</div>';
+                }
             }
             container.innerHTML = html;
         }
