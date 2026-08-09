@@ -876,6 +876,10 @@
             AppState.attendanceRecords = cleanedRecords;
             try { localStorage.setItem('doyakdaro_attendance_records', JSON.stringify(AppState.attendanceRecords)); } catch (e) { }
 
+                        var listContainer = document.getElementById('attendanceHistoryList');
+            if (listContainer && (!AppState.attendanceRecords || AppState.attendanceRecords.length === 0)) {
+                listContainer.innerHTML = '<div style="text-align:center; padding:24px 12px; color:#2563eb; font-weight:700;"><i class="fa-solid fa-spinner fa-spin" style="font-size:1.5rem; margin-bottom:8px; color:#2563eb;"></i><br>?곻툘 Supabase Cloud DB?먯꽌 ?ㅼ떆媛?異쒗눜洹?湲곕줉???숆린?뷀븯??以묒엯?덈떎...</div>';
+            }
             var records = AppState.attendanceRecords || [];
             
             var myRecord = records.find(function(r) {
@@ -1323,7 +1327,11 @@
 
                 if (!modal || !listEl) return false;
 
-                var records = AppState.attendanceRecords || [];
+                            var listContainer = document.getElementById('attendanceHistoryList');
+            if (listContainer && (!AppState.attendanceRecords || AppState.attendanceRecords.length === 0)) {
+                listContainer.innerHTML = '<div style="text-align:center; padding:24px 12px; color:#2563eb; font-weight:700;"><i class="fa-solid fa-spinner fa-spin" style="font-size:1.5rem; margin-bottom:8px; color:#2563eb;"></i><br>?곻툘 Supabase Cloud DB?먯꽌 ?ㅼ떆媛?異쒗눜洹?湲곕줉???숆린?뷀븯??以묒엯?덈떎...</div>';
+            }
+            var records = AppState.attendanceRecords || [];
                 var userRecords = records.filter(function(r) { 
                     var rName = String((r && (r.userName || r.userId)) || '').trim();
                     return rName === cleanName; 
@@ -1482,6 +1490,10 @@
                 try { e.stopPropagation(); } catch (err) {}
             }
 
+                        var listContainer = document.getElementById('attendanceHistoryList');
+            if (listContainer && (!AppState.attendanceRecords || AppState.attendanceRecords.length === 0)) {
+                listContainer.innerHTML = '<div style="text-align:center; padding:24px 12px; color:#2563eb; font-weight:700;"><i class="fa-solid fa-spinner fa-spin" style="font-size:1.5rem; margin-bottom:8px; color:#2563eb;"></i><br>?곻툘 Supabase Cloud DB?먯꽌 ?ㅼ떆媛?異쒗눜洹?湲곕줉???숆린?뷀븯??以묒엯?덈떎...</div>';
+            }
             var records = AppState.attendanceRecords || [];
             if (!records || records.length === 0) {
                 try {
@@ -7098,7 +7110,7 @@
             <span class="brand-title"
                 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">도약다로</span>
             <span class="badge-v"
-                style="font-size: 0.7rem; background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(37, 99, 235, 0.2);">v39.0</span>
+                style="font-size: 0.7rem; background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(37, 99, 235, 0.2);">v40.0</span>
         </div>
 
         <!-- 🔍 0.1초 울트라 슬림 실시간 통합 검색바 -->
@@ -8523,6 +8535,10 @@
             // 👥 [최고 관리자 전용 전체 팀원 관리표 실시간 렌더러 - Supabase Cloud DB Direct 100% 무적 HTML 렌더러]
         async function directRenderAdminUserRolesTable() {
             var container = document.getElementById('adminUserRoleList');
+            if (container) {
+                container.innerHTML = '<div style="text-align:center; padding:28px 12px; color:#2563eb; font-weight:700;"><i class="fa-solid fa-spinner fa-spin" style="font-size:1.6rem; margin-bottom:8px; color:#2563eb;"></i><br>?뫁 Supabase Cloud DB?먯꽌 ?뺤떇 ???20紐?紐낅떒???숆린?뷀븯??以묒엯?덈떎...</div>';
+            }
+            var container = document.getElementById('adminUserRoleList');
             if (!container) return;
 
             var rolesMap = {};
@@ -9100,6 +9116,10 @@
 
         // 👥 [최고 관리자 전용 전체 팀원 관리표 실시간 렌더러 - Supabase Cloud DB Direct 100% 무적 HTML 렌더러]
         async function directRenderAdminUserRolesTable() {
+            var container = document.getElementById('adminUserRoleList');
+            if (container) {
+                container.innerHTML = '<div style="text-align:center; padding:28px 12px; color:#2563eb; font-weight:700;"><i class="fa-solid fa-spinner fa-spin" style="font-size:1.6rem; margin-bottom:8px; color:#2563eb;"></i><br>?뫁 Supabase Cloud DB?먯꽌 ?뺤떇 ???20紐?紐낅떒???숆린?뷀븯??以묒엯?덈떎...</div>';
+            }
             var container = document.getElementById('adminUserRoleList');
             if (!container) return;
 
