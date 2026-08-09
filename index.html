@@ -9076,8 +9076,9 @@
             if (!container) return;
 
             var rolesMap = {};
+            var nameSet = {};
 
-            // ☁️ Step 1. Supabase Cloud DB (user_credentials) REST API 무적 직통 긁어오기 (모바일 0.001초 직통과 100% 동일)
+            // ☁️ Step 1. Supabase Cloud DB (user_credentials) REST API 무적 직통 긁어오기
             try {
                 var restUrl = 'https://fhwqaixpxffnapmqvvdy.supabase.co/rest/v1/user_credentials?select=*';
                 var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZod3FhaXhweGZmbmFwbXF2dmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODA3NzQsImV4cCI6MjEwMDE1Njc3NH0.Pt8PWa_kseivEXivT4wtAuQv1IjtQrV-JRBgOvFNy1w';
@@ -9090,43 +9091,83 @@
                         list.forEach(function(row) {
                             var u = row.username || row.user_name || row.userName;
                             if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주' && u.trim() !== 'undefined') {
-                                rolesMap[u.trim()] = row.role || 'editor';
+                                var cleanU = u.trim();
+                                nameSet[cleanU] = true;
+                                rolesMap[cleanU] = row.role || rolesMap[cleanU] || 'editor';
                             }
                         });
                     }
                 }
             } catch(e){}
 
-            // 🛡️ Step 1.5. REST API 실패 시 Supabase JS SDK 2차 백업 경로 (드롭다운과 동일한 이중 안전장치)
-            if (Object.keys(rolesMap).length === 0) {
-                var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
-                if (sb) {
-                    try {
-                        var sdkRes = await sb.from('user_credentials').select('*');
-                        if (sdkRes && sdkRes.data && sdkRes.data.length > 0) {
-                            sdkRes.data.forEach(function(row) {
-                                var u = row.username || row.user_name || row.userName;
-                                if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주' && u.trim() !== 'undefined') {
-                                    rolesMap[u.trim()] = row.role || 'editor';
-                                }
-                            });
-                        }
-                    } catch(e2){}
-                }
+            // 🛡️ Step 2. Supabase JS SDK user_credentials 2차 융합 경로
+            var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+            if (sb) {
+                try {
+                    var sdkRes = await sb.from('user_credentials').select('*');
+                    if (sdkRes && sdkRes.data && sdkRes.data.length > 0) {
+                        sdkRes.data.forEach(function(row) {
+                            var u = row.username || row.user_name || row.userName;
+                            if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주' && u.trim() !== 'undefined') {
+                                var cleanU = u.trim();
+                                nameSet[cleanU] = true;
+                                rolesMap[cleanU] = row.role || rolesMap[cleanU] || 'editor';
+                            }
+                        });
+                    }
+                } catch(e2){}
             }
 
-            // 📱 Step 2. 만약 DB 통신에 성공하지 못했을 때만 백업 메모리 수집
-            if (Object.keys(rolesMap).length === 0 && window.AppState && window.AppState.userRoles) {
+            // 📱 Step 3. AppState.userRoles 및 localStorage 병합
+            try {
+                var storedRoles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+                Object.keys(storedRoles).forEach(function(k) {
+                    if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
+                        var cleanK = k.trim();
+                        nameSet[cleanK] = true;
+                        if (!rolesMap[cleanK]) rolesMap[cleanK] = storedRoles[cleanK] || 'editor';
+                    }
+                });
+            } catch(e3){}
+
+            if (window.AppState && window.AppState.userRoles) {
                 Object.keys(window.AppState.userRoles).forEach(function(k) {
                     if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
-                        rolesMap[k.trim()] = window.AppState.userRoles[k] || 'editor';
+                        var cleanK = k.trim();
+                        nameSet[cleanK] = true;
+                        if (!rolesMap[cleanK]) rolesMap[cleanK] = window.AppState.userRoles[k] || 'editor';
                     }
                 });
             }
 
+            // 🏃‍♂️ Step 4. Supabase 출퇴근 기록 (attendance_records) 팀원 명단 융합 (드롭다운 20명 표출 성공 비결!)
+            if (window.AppState && window.AppState.attendanceRecords && Array.isArray(window.AppState.attendanceRecords)) {
+                window.AppState.attendanceRecords.forEach(function(rec) {
+                    var u = rec.user_name || rec.userName || rec.user;
+                    if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주' && u.trim() !== 'undefined') {
+                        var cleanU = u.trim();
+                        nameSet[cleanU] = true;
+                        if (!rolesMap[cleanU]) rolesMap[cleanU] = 'editor';
+                    }
+                });
+            }
+
+            if (window.AppState && window.AppState.currentUser && window.AppState.currentUser.fullName) {
+                var curU = window.AppState.currentUser.fullName.trim();
+                if (curU && curU !== '팀원' && curU !== '강연주') {
+                    nameSet[curU] = true;
+                    if (!rolesMap[curU]) rolesMap[curU] = (curU === '이민우' ? 'admin' : 'editor');
+                }
+            }
+
+            delete nameSet['강연주'];
+            delete nameSet['팀원'];
+            delete nameSet['undefined'];
             delete rolesMap['강연주'];
             delete rolesMap['팀원'];
             delete rolesMap['undefined'];
+
+            if (nameSet['이민우']) rolesMap['이민우'] = 'admin';
 
             if (!window.AppState) window.AppState = {};
             window.AppState.userRoles = rolesMap;
@@ -9134,9 +9175,9 @@
 
             var searchInput = document.getElementById('adminUserTargetName');
             var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
-            var users = Object.keys(rolesMap).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+            var users = Object.keys(nameSet).filter(Boolean).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
 
-            // 🛡️ Step 3. 100% 무적 HTML 생성 및 직통 주입
+            // 🛡️ Step 5. 100% 무적 HTML 생성 및 직통 주입
             var html = '';
             users.forEach(function(uName) {
                 if (query && uName.toLowerCase().indexOf(query) === -1) return;
@@ -9166,7 +9207,7 @@
 
             if (!html) {
                 if (query) {
-                    html = '<div style="font-size:0.85rem; color:#64748b; text-align:center; padding:16px 12px; background:#f8fafc; border-radius:10px; border:1px dashed #cbd5e1;">🔍 <strong>\'' + query + '\'</strong> 검색 결과와 일치하는 팀원이 없습니다. <br><button type="button" onclick="var el=document.getElementById(\'adminUserTargetName\'); if(el){el.value=\'\'; directRenderAdminUserRolesTable();}" style="margin-top:8px; background:#2563eb; color:#ffffff; border:none; padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer; box-shadow:0 2px 4px rgba(37,99,235,0.2);">🔄 전체 팀원 20명 목록 보기</button></div>';
+                    html = '<div style="font-size:0.85rem; color:#64748b; text-align:center; padding:16px 12px; background:#f8fafc; border-radius:10px; border:1px dashed #cbd5e1;">🔍 <strong>\'' + query + '\'</strong> 검색 결과와 일치하는 팀원이 없습니다. <br><button type="button" onclick="var el=document.getElementById(\'adminUserTargetName\'); if(el){el.value=\'\'; directRenderAdminUserRolesTable();}" style="margin-top:8px; background:#2563eb; color:#ffffff; border:none; padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer; box-shadow:0 2px 4px rgba(37,99,235,0.2);">🔄 전체 팀원 목록 보기</button></div>';
                 } else {
                     html = '<div style="font-size:0.82rem; color:#94a3b8; text-align:center; padding:16px 0;">등록된 팀원이 없습니다. 위에서 사전 등록해 주세요!</div>';
                 }
