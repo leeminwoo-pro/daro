@@ -7147,7 +7147,7 @@
             <span class="brand-title"
                 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">도약다로</span>
             <span class="badge-v"
-                style="font-size: 0.7rem; background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(37, 99, 235, 0.2);">v36.0</span>
+                style="font-size: 0.7rem; background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(37, 99, 235, 0.2);">v37.0</span>
         </div>
 
         <!-- 🔍 0.1초 울트라 슬림 실시간 통합 검색바 -->
@@ -8277,79 +8277,223 @@
                     <button type="button" onclick="directAdjustCustomClockTime(30)" style="background: #f1f5f9; color: #475569; border: 1px solid rgba(15,23,42,0.15); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; cursor: pointer;">+30분</button>
                     <button type="button" onclick="directSetCustomClockTime('')" style="background: #f1f5f9; color: #94a3b8; border: none; padding: 4px 6px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer;" title="시각 초기화">🧹 초기화</button>
                 </div>
-            </div>
+                
+                <!-- 👥 [최고 관리자 전용 전체 팀원 관리표 실시간 렌더러 - Supabase Cloud DB Direct 100% 무적 HTML 렌더러] -->
+                <script>
+                async function directRenderAdminUserRolesTable() {
+                    var container = document.getElementById('adminUserRoleList');
+                    if (!container) return;
 
-            <!-- 2. 📊 엑셀 (CSV) 데이터 내보내기 & 필터 헤더 & 실시간 DB 새로고침 -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; background: #ffffff; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(15,23,42,0.1);">
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <select id="attendanceMonthFilter" onchange="directRenderAttendanceUI()" style="padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(15,23,42,0.2); font-size: 0.82rem; font-weight: 700;">
-                        <option value="ALL">🗓️ 전체 월</option>
-                    </select>
-                    <select id="attendanceUserFilter" onchange="directRenderAttendanceUI()" style="padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(15,23,42,0.2); font-size: 0.82rem; font-weight: 700;">
-                        <option value="ALL">👤 전체 팀원</option>
-                    </select>
-                </div>
-                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                    <button type="button" onclick="directFetchAttendanceFromSupabase()" class="btn-primary btn-sm" style="background: linear-gradient(135deg, #3b82f6, #2563eb); font-weight: 800; border-radius: 8px; padding: 7px 12px; font-size: 0.83rem; border: none; cursor: pointer;" title="구글 클라우드 DB에서 실시간 출퇴근 데이터 1초 강제 불러오기">
-                        🔄 실시간 DB 새로고침
-                    </button>
-                    <button type="button" onclick="directExportAttendanceCSV(event)" class="btn-primary btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; border-radius: 8px; padding: 7px 14px; font-size: 0.83rem; border: none; cursor: pointer;" title="근태 기록 엑셀 파일 다운로드 & 클립보드 복사">
-                        📊 엑셀 (CSV) 내보내기
-                    </button>
-                </div>
-            </div>
+                    var rolesMap = {};
+                    var nameSet = {};
+                    var isCloudLoaded = false;
 
-            <!-- 3. 🟢 근무 중 / ⚪ 퇴근 완료 / 🔴 미출근 / 📋 전체 이력 탭 버튼 4종 -->
-            <div style="display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; flex-wrap: wrap;">
-                <button type="button" id="tabBtnWorking" onclick="directSwitchAttendanceTab('working')" style="flex: 1; min-width: 120px; padding: 7px 10px; border-radius: 8px; border: none; background: rgba(16,185,129,0.15); color: #047857; font-weight: 800; font-size: 0.83rem; cursor: pointer;">
-                    🟢 현재 근무 중 (<span id="modalTabWorkingCount">0</span>명)
-                </button>
-                <button type="button" id="tabBtnCompleted" onclick="directSwitchAttendanceTab('completed')" style="flex: 1; min-width: 120px; padding: 7px 10px; border-radius: 8px; border: none; background: #f1f5f9; color: #64748b; font-weight: 800; font-size: 0.83rem; cursor: pointer;">
-                    ⚪ 오늘 퇴근 완료 (<span id="modalTabCompletedCount">0</span>명)
-                </button>
-                <button type="button" id="tabBtnAbsent" onclick="directSwitchAttendanceTab('absent')" style="padding: 7px 10px; border-radius: 8px; border: none; background: #f1f5f9; color: #64748b; font-weight: 800; font-size: 0.83rem; cursor: pointer;">
-                    🔴 오늘 미출근 (<span id="modalTabAbsentCount">0</span>명)
-                </button>
-                <button type="button" id="tabBtnAll" onclick="directSwitchAttendanceTab('all')" style="padding: 7px 10px; border-radius: 8px; border: none; background: #f1f5f9; color: #64748b; font-weight: 800; font-size: 0.83rem; cursor: pointer;">
-                    📋 전체 이력 (<span id="modalTabAllCount">0</span>개)
-                </button>
-            </div>
+                    try {
+                        var restUrl = 'https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials?select=*';
+                        var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
+                        var res = await fetch(restUrl, {
+                            headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
+                        });
+                        if (res.ok) {
+                            var list = await res.json();
+                            if (list && list.length > 0) {
+                                list.forEach(function(row) {
+                                    var u = row.username || row.user_name || row.userName;
+                                    if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주' && u.trim() !== 'undefined') {
+                                        var cleanU = u.trim();
+                                        nameSet[cleanU] = true;
+                                        rolesMap[cleanU] = row.role || 'editor';
+                                    }
+                                });
+                                if (Object.keys(nameSet).length > 0) isCloudLoaded = true;
+                            }
+                        }
+                    } catch(e){}
 
-            <!-- 4. 📋 선택된 탭별 근태 목록 피드 -->
-            <div id="attendanceHistoryList" style="max-height: 360px; overflow-y: auto; border: 1px solid rgba(15,23,42,0.1); border-radius: 12px; padding: 10px; background: #ffffff; display: flex; flex-direction: column; gap: 8px;">
-                <div style="text-align: center; color: #64748b; font-size: 0.85rem; padding: 20px;">근태 기록을 불러오는 중입니다...</div>
-            </div>
+                    if (!isCloudLoaded) {
+                        var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+                        if (sb) {
+                            try {
+                                var sdkRes = await sb.from('user_credentials').select('*');
+                                if (sdkRes && sdkRes.data && sdkRes.data.length > 0) {
+                                    sdkRes.data.forEach(function(row) {
+                                        var u = row.username || row.user_name || row.userName;
+                                        if (u && u.trim() && u.trim() !== '팀원' && u.trim() !== '강연주' && u.trim() !== 'undefined') {
+                                            var cleanU = u.trim();
+                                            nameSet[cleanU] = true;
+                                            rolesMap[cleanU] = row.role || 'editor';
+                                        }
+                                    });
+                                    if (Object.keys(nameSet).length > 0) isCloudLoaded = true;
+                                }
+                            } catch(e2){}
+                        }
+                    }
 
-            <div style="margin-top: 16px; text-align: right;">
-                <button type="button" class="btn-secondary" onclick="directCloseModal('attendanceModal')" style="padding: 8px 18px; border-radius: 10px; font-weight: 700;">닫기</button>
-            </div>
-        </div>
-    </div>
-    <div id="metricFilterModal" class="modal-overlay" onclick="if(event.target===this) directCloseModal('metricFilterModal');" style="display: none; z-index: 2000000000 !important; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); align-items: flex-start; justify-content: center; padding-top: 60px;">
-        <div class="modal-content glass-panel" style="max-width: 650px; width: 92%; padding: 24px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 24px 80px rgba(0,0,0,0.95);">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.12); padding-bottom: 12px; margin-bottom: 16px;">
-                <h4 id="metricFilterModalTitle" style="font-size: 1.1rem; font-weight: 800; color: var(--text-bright);">📊 일정 필터 목록</h4>
-                <button type="button" onclick="directCloseModal('metricFilterModal')" class="btn-close" style="font-size: 1.2rem; background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div id="metricFilterModalList" style="max-height: 480px; overflow-y: auto; padding-right: 4px;">
-            </div>
-        </div>
-    </div>
+                    if (!isCloudLoaded) {
+                        try {
+                            var storedRoles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
+                            Object.keys(storedRoles).forEach(function(k) {
+                                if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
+                                    var cleanK = k.trim();
+                                    nameSet[cleanK] = true;
+                                    if (!rolesMap[cleanK]) rolesMap[cleanK] = storedRoles[cleanK] || 'editor';
+                                }
+                            });
+                        } catch(e3){}
+                    }
 
-    <!-- 🔑 [팀 방 비밀번호 분실 복구 초기화 모달] -->
-    <div id="resetPasscodeModal" class="modal-overlay" onclick="if(event.target===this) directCloseModal('resetPasscodeModal');" style="display: none; z-index: 3000000000 !important; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); align-items: flex-start; justify-content: center; padding-top: 60px;">
-        <div class="modal-content glass-panel" style="max-width: 480px; width: 92%; padding: 24px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 24px 80px rgba(0,0,0,0.95);">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.12); padding-bottom: 12px; margin-bottom: 16px;">
-                <h4 style="font-size: 1.1rem; font-weight: 800; color: #facc15;"><i class="fa-solid fa-key"></i> 🔑 팀 방 비밀번호 초기화 복구</h4>
-                <button type="button" onclick="directCloseModal('resetPasscodeModal')" class="btn-close" style="font-size: 1.2rem; background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div style="font-size: 0.88rem; color: var(--text-primary); margin-bottom: 16px; line-height: 1.5;">
-                * 비밀번호를 잊으셨다면 <strong>최고 관리자(이민우님)</strong>에게 문의하시거나, 관리자에게 부여받은 마스터 PIN 번호를 입력해 주세요.
-            </div>
-            <div class="input-group">
-                <label for="resetAdminPinInput">관리자 마스터 PIN 번호 입력</label>
-                <input type="password" id="resetAdminPinInput" placeholder="마스터 PIN 번호를 입력하세요" style="text-align: center; font-size: 1.05rem;" onkeypress="if(event.key==='Enter') directResetRoomPasscodeByAdminPin();">
-            </div>
+                    if (window.AppState && window.AppState.currentUser && window.AppState.currentUser.fullName) {
+                        var curU = window.AppState.currentUser.fullName.trim();
+                        if (curU && curU !== '팀원' && curU !== '강연주') {
+                            nameSet[curU] = true;
+                            if (!rolesMap[curU]) rolesMap[curU] = (curU === '이민우' ? 'admin' : 'editor');
+                        }
+                    }
+
+                    delete nameSet['강연주'];
+                    delete nameSet['팀원'];
+                    delete nameSet['undefined'];
+                    delete rolesMap['강연주'];
+                    delete rolesMap['팀원'];
+                    delete rolesMap['undefined'];
+
+                    if (nameSet['이민우']) rolesMap['이민우'] = 'admin';
+
+                    if (!window.AppState) window.AppState = {};
+                    window.AppState.userRoles = rolesMap;
+                    try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(rolesMap)); } catch(e){}
+
+                    var searchInput = document.getElementById('adminUserTargetName');
+                    var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+                    var users = Object.keys(nameSet).filter(Boolean).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+
+                    var html = '';
+                    users.forEach(function(uName) {
+                        if (query && uName.toLowerCase().indexOf(query) === -1) return;
+                        var role = rolesMap[uName] || 'editor';
+                        var selectId = 'adminUserRoleSelect_' + encodeURIComponent(uName).replace(/%/g, '_');
+                        var selectHtml = '<select id="' + selectId + '" style="padding:5px 8px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; font-weight:700; background:#f8fafc; color:#0f172a;">' +
+                            '<option value="editor"' + (role === 'editor' || role === 'writer' ? ' selected' : '') + '>✏️ 작성자</option>' +
+                            '<option value="viewer"' + (role === 'viewer' ? ' selected' : '') + '>👁️ 뷰어</option>' +
+                            '<option value="admin"' + (role === 'admin' ? ' selected' : '') + '>👑 최고 관리자</option>' +
+                            '</select>';
+
+                        var saveBtn = '<button type="button" onclick="directSaveUserRoleFromAdmin(\'' + uName + '\', \'' + selectId + '\')" style="background:#2563eb; color:#ffffff; border:none; padding:5px 10px; border-radius:6px; font-size:0.8rem; font-weight:800; cursor:pointer; box-shadow:0 2px 4px rgba(37,99,235,0.2);">💾 저장</button>';
+
+                        var delBtn = (uName === '이민우') ? '<span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">[기본 관리자]</span>' :
+                            '<button type="button" onclick="directDeleteUserRoleFromAdmin(\'' + uName + '\')" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer;">🗑️ 삭제</button>';
+
+                        html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:10px 12px; border-radius:10px; border:1px solid rgba(15,23,42,0.1); margin-bottom:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">' +
+                                '<div style="display:flex; align-items:center; gap:8px;">' +
+                                '<strong style="font-size:0.9rem; color:#0f172a;">👤 ' + uName + '</strong>' +
+                                '</div>' +
+                                '<div style="display:flex; align-items:center; gap:6px;">' +
+                                selectHtml +
+                                saveBtn +
+                                delBtn +
+                                '</div></div>';
+                    });
+
+                    if (!html) {
+                        if (query) {
+                            html = '<div style="font-size:0.85rem; color:#64748b; text-align:center; padding:16px 12px; background:#f8fafc; border-radius:10px; border:1px dashed #cbd5e1;">🔍 <strong>\'' + query + '\'</strong> 검색 결과와 일치하는 팀원이 없습니다. <br><button type="button" onclick="var el=document.getElementById(\'adminUserTargetName\'); if(el){el.value=\'\'; directRenderAdminUserRolesTable();}" style="margin-top:8px; background:#2563eb; color:#ffffff; border:none; padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer; box-shadow:0 2px 4px rgba(37,99,235,0.2);">🔄 전체 팀원 목록 보기</button></div>';
+                        } else {
+                            html = '<div style="font-size:0.82rem; color:#94a3b8; text-align:center; padding:16px 0;">등록된 팀원이 없습니다. 위에서 사전 등록해 주세요!</div>';
+                        }
+                    }
+                    container.innerHTML = html;
+                }
+                window.directRenderAdminUserRolesTable = directRenderAdminUserRolesTable;
+
+                async function populateAdminUserSelect() {
+                    var selects = [
+                        document.getElementById('adminTargetUserSelect_inConsole'),
+                        document.getElementById('adminTargetUserSelect'),
+                        document.getElementById('adminTargetUserSelect_inModal'),
+                        document.getElementById('attendanceUserFilter')
+                    ].filter(Boolean);
+
+                    var nameSet = {};
+                    var isCloudLoaded = false;
+
+                    try {
+                        var restUrl = 'https://rshouptyrdonitatnlge.supabase.co/rest/v1/user_credentials?select=*';
+                        var restKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzaG91cHR5cmRvbml0YXRubGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNTY5OTUsImV4cCI6MjEwMTgzMjk5NX0.FaYhkJyzsdlDWEM0yYk3z7Mkz2mrTKqC29LVbEFhU08';
+                        var fetchRes = await fetch(restUrl, {
+                            headers: { 'apikey': restKey, 'Authorization': 'Bearer ' + restKey }
+                        });
+                        if (fetchRes.ok) {
+                            var dataList = await fetchRes.json();
+                            if (dataList && dataList.length > 0) {
+                                dataList.forEach(function(row) {
+                                    var rRole = row.role || 'writer';
+                                    if (rRole === 'viewer') return;
+                                    var uName = row.username || row.user_name || row.userName;
+                                    if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
+                                        nameSet[uName.trim()] = true;
+                                        if (!window.AppState.userRoles) window.AppState.userRoles = {};
+                                        window.AppState.userRoles[uName.trim()] = rRole;
+                                    }
+                                });
+                                if (Object.keys(nameSet).length > 0) isCloudLoaded = true;
+                                try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
+                            }
+                        }
+                    } catch(e){}
+
+                    if (!isCloudLoaded) {
+                        var sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : window.supabaseClient;
+                        if (sb) {
+                            try {
+                                var res = await sb.from('user_credentials').select('*');
+                                if (res && res.data && res.data.length > 0) {
+                                    res.data.forEach(function(row) {
+                                        var rRole = row.role || 'writer';
+                                        if (rRole === 'viewer') return;
+                                        var uName = row.username || row.user_name || row.userName;
+                                        if (uName && uName.trim() && uName.trim() !== '팀원' && uName.trim() !== '강연주' && uName.trim() !== 'undefined') {
+                                            nameSet[uName.trim()] = true;
+                                            if (!window.AppState.userRoles) window.AppState.userRoles = {};
+                                            window.AppState.userRoles[uName.trim()] = rRole;
+                                        }
+                                    });
+                                    if (Object.keys(nameSet).length > 0) isCloudLoaded = true;
+                                    try { localStorage.setItem('doyakdaro_user_roles', JSON.stringify(window.AppState.userRoles)); } catch(e){}
+                                }
+                            } catch(e){}
+                        }
+                    }
+
+                    if (window.AppState && window.AppState.currentUser && window.AppState.currentUser.fullName) {
+                        var cur = window.AppState.currentUser.fullName;
+                        if (cur && cur.trim() && cur.trim() !== '팀원' && cur.trim() !== '강연주') nameSet[cur.trim()] = true;
+                    }
+
+                    delete nameSet['강연주'];
+                    delete nameSet['팀원'];
+                    delete nameSet['undefined'];
+
+                    var users = Object.keys(nameSet).filter(Boolean).sort(function(a, b) {
+                        return a.localeCompare(b, 'ko');
+                    });
+
+                    selects.forEach(function(sel) {
+                        if (!sel) return;
+                        var currentVal = sel.value;
+                        var isFilter = sel.id === 'attendanceUserFilter';
+                        var defaultText = isFilter ? '👤 전체 팀원' : ('-- 수동 출퇴근 처리할 팀원 선택 (' + users.length + '명) --');
+                        var html = '<option value="' + (isFilter ? 'ALL' : '') + '">' + defaultText + '</option>';
+                        users.forEach(function(u) {
+                            html += '<option value="' + u + '">👤 ' + u + '</option>';
+                        });
+                        sel.innerHTML = html;
+                        if (currentVal) sel.value = currentVal;
+                    });
+                    return users;
+                }
+                </script>
+
             <div class="modal-actions" style="margin-top: 20px;">
                 <button type="button" class="btn-secondary" onclick="directCloseModal('resetPasscodeModal')">취소</button>
                 <button type="button" class="btn-primary" onclick="directResetRoomPasscodeByAdminPin()" style="background: linear-gradient(135deg, #facc15, #f59e0b); color: #0f172a; font-weight: 800;">
