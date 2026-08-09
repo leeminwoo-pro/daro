@@ -2030,50 +2030,11 @@
         }
         window.directManualClockToggle = directManualClockToggle;
 
-        // 👑 [최고 관리자 전용 특정 팀원 수동 근태 대리 제어 기능 - 오직 전체팀원 관리표만 참조]
-        function directPopulateAdminUserDropdown() {
-            var selectEls = [
-                document.getElementById('adminTargetUserSelect'), 
-                document.getElementById('adminTargetUserSelect_inModal'),
-                document.getElementById('adminTargetUserSelect_inConsole')
-            ].filter(Boolean);
-            if (selectEls.length === 0) return;
-
-            var uNameSet = {};
-            // 오직 최고 관리자 지정 전체팀원 관리표(userRoles)에서만 실존 유저 수집
-            try {
-                var roles = AppState.userRoles;
-                if (!roles) roles = JSON.parse(localStorage.getItem('doyakdaro_user_roles')) || {};
-                if (roles && typeof roles === 'object') {
-                    Object.keys(roles).forEach(function(k) {
-                        if (k && k.trim() && k.trim() !== '팀원' && k.trim() !== '강연주' && k.trim() !== 'undefined') {
-                            uNameSet[k.trim()] = true;
-                        }
-                    });
-                }
-            } catch(e){}
-
-            if (AppState.currentUser && AppState.currentUser.fullName && AppState.currentUser.fullName.trim() !== '팀원') {
-                uNameSet[AppState.currentUser.fullName.trim()] = true;
+        // 👑 [최고 관리자 전용 특정 팀원 수동 근태 대리 제어 기능 - 오직 Supabase Cloud DB 실존 유저 100% 직통 동기화]
+        async function directPopulateAdminUserDropdown() {
+            if (typeof populateAdminUserSelect === 'function') {
+                return await populateAdminUserSelect();
             }
-
-            if (Object.keys(uNameSet).length === 0) uNameSet['이민우'] = true;
-
-            var names = Object.keys(uNameSet).filter(Boolean).sort(function(a, b) {
-                return a.localeCompare(b, 'ko');
-            });
-
-            selectEls.forEach(function(selectEl) {
-                var currentVal = selectEl.value;
-                selectEl.innerHTML = '<option value="">-- 수동 출퇴근 처리할 팀원 선택 (' + names.length + '명) --</option>';
-                names.forEach(function(name) {
-                    var opt = document.createElement('option');
-                    opt.value = name;
-                    opt.textContent = '👤 ' + name;
-                    if (name === currentVal) opt.selected = true;
-                    selectEl.appendChild(opt);
-                });
-            });
         }
         window.directPopulateAdminUserDropdown = directPopulateAdminUserDropdown;
 
@@ -7146,7 +7107,7 @@
             <span class="brand-title"
                 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">도약다로</span>
             <span class="badge-v"
-                style="font-size: 0.7rem; background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(37, 99, 235, 0.2);">v37.0</span>
+                style="font-size: 0.7rem; background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(37, 99, 235, 0.2);">v38.0</span>
         </div>
 
         <!-- 🔍 0.1초 울트라 슬림 실시간 통합 검색바 -->
